@@ -28,7 +28,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && pnpm -C playground build",
     "dev": "pnpm -r --parallel run dev",
     "lint": "eslint .",
     "prepublishOnly": "nr build",

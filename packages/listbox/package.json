@@ -3,6 +3,7 @@
   "type": "module",
   "version": "0.0.0",
   "description": "Accessible listbox primitives for React",
+  "license": "MIT",
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
