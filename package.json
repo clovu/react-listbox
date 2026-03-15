@@ -29,11 +29,15 @@
   ],
   "scripts": {
     "build": "tsdown && pnpm -C playground build",
-    "dev": "pnpm -r --parallel run dev",
+    "build:lib": "tsdown",
+    "dev": "pnpm run build:lib && pnpm run dev:all",
+    "dev:all": "pnpm run dev:lib & pnpm run dev:playground",
+    "dev:lib": "tsdown --watch",
+    "dev:playground": "pnpm -C playground run dev",
     "lint": "eslint .",
     "prepublishOnly": "nr build",
     "release": "bumpp && pnpm -r publish --access=public",
-    "start": "pnpm -C playground run dev",
+    "start": "pnpm run dev",
     "test": "vitest",
     "typecheck": "tsc",
     "prepare": "simple-git-hooks"

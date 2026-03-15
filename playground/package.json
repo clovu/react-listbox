@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@listbox/react": "workspace:^",
+    "@tailwindcss/vite": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",

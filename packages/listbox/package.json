@@ -17,7 +17,7 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsdown --watch"
+    "dev": "pnpm -C ../.. run dev:lib"
   },
   "peerDependencies": {
     "react": "^19.0.0",

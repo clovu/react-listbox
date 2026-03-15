@@ -13,11 +13,11 @@ Accessible listbox primitives for React.
 
 ```bash
 pnpm i
-pnpm start
+pnpm dev
 ```
 
-- `pnpm start`: run the playground app
-- `pnpm dev`: run workspace dev scripts in parallel
+- `pnpm dev`: run `@listbox/react` tsdown watch + playground dev together (recommended)
+- `pnpm start`: same as `pnpm dev`
 
 ## Development
 
