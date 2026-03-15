@@ -7,6 +7,9 @@ export default antfu(
     pnpm: true,
   },
   {
+    ignores: ['.agents/**', '.claude/**/*.md'],
+  },
+  {
     rules: {
       'ts/explicit-function-return-type': 'off',
       'markdown/require-alt-text': 'off',
