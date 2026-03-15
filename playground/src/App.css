@@ -1,0 +1,116 @@
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #0f172a;
+}
+
+h1 {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+
+.intro {
+  margin: 0 0 20px;
+  color: #475569;
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.listbox {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px;
+  max-height: 220px;
+  overflow: auto;
+  outline: none;
+}
+
+.listbox:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  border-color: #3b82f6;
+}
+
+.option {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: #f1f5f9;
+}
+
+.option[data-highlighted] {
+  background: #dbeafe;
+}
+
+.option[data-state='checked'] {
+  background: #2563eb;
+  color: #fff;
+}
+
+.option[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.group {
+  margin-bottom: 8px;
+}
+
+.group:last-child {
+  margin-bottom: 0;
+}
+
+.group-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+}
+
+.listbox-display {
+  background: #f8fafc;
+}
+
+.listbox-display .option {
+  cursor: default;
+}
+
+.listbox-display .option:hover:not([data-state='checked']):not([data-highlighted]) {
+  background: transparent;
+}
+
+.result {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.tips ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.tips li {
+  margin-bottom: 6px;
+}

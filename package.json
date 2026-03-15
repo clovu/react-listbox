@@ -1,0 +1,66 @@
+{
+  "name": "react-listbox-root",
+  "type": "module",
+  "packageManager": "pnpm@10.25.0",
+  "description": "_description_",
+  "author": "Clover You <hi@clovu.me>",
+  "license": "MIT",
+  "funding": "https://github.com/sponsors/clovu",
+  "homepage": "https://github.com/clovu/react-listbox#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clovu/react-listbox.git"
+  },
+  "bugs": "https://github.com/clovu/react-listbox/issues",
+  "keywords": [
+    "listbox",
+    "react"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "pnpm -r --parallel run dev",
+    "lint": "eslint .",
+    "prepublishOnly": "nr build",
+    "release": "bumpp && pnpm -r publish --access=public",
+    "start": "pnpm -C playground run dev",
+    "test": "vitest",
+    "typecheck": "tsc",
+    "prepare": "simple-git-hooks"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@antfu/ni": "catalog:",
+    "@eslint-react/eslint-plugin": "catalog:",
+    "@types/node": "catalog:",
+    "bumpp": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "lint-staged": "catalog:",
+    "publint": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "tinyexec": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "vitest-package-exports": "catalog:",
+    "yaml": "catalog:"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm i --frozen-lockfile --ignore-scripts --offline && npx lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
