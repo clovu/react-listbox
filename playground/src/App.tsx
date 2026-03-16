@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './components/ui/card'
 import {
   ListboxContent,
@@ -9,19 +9,84 @@ import {
   ListboxRoot,
 } from './components/ui/listbox'
 
+type ThemePreference = 'light' | 'dark' | 'system'
+
+const THEME_STORAGE_KEY = 'playground-theme'
+
+function isThemePreference(value: string): value is ThemePreference {
+  return value === 'light' || value === 'dark' || value === 'system'
+}
+
 function App() {
   const [singleValue, setSingleValue] = useState('2')
   const [multiValues, setMultiValues] = useState<string[]>(['1', '3'])
   const [groupedValue, setGroupedValue] = useState('apple')
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+    return stored && isThemePreference(stored) ? stored : 'system'
+  })
+
+  useEffect(() => {
+    const root = document.documentElement
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+
+    const applyTheme = () => {
+      const shouldUseDark = themePreference === 'dark' || (themePreference === 'system' && media.matches)
+      root.classList.toggle('dark', shouldUseDark)
+    }
+
+    applyTheme()
+    window.localStorage.setItem(THEME_STORAGE_KEY, themePreference)
+
+    if (themePreference !== 'system') {
+      return
+    }
+
+    const handleChange = () => {
+      applyTheme()
+    }
+
+    media.addEventListener('change', handleChange)
+    return () => {
+      media.removeEventListener('change', handleChange)
+    }
+  }, [themePreference])
 
   return (
     <main className="min-h-screen bg-linear-to-b from-background to-muted/30 py-10">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4">
         <section className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives 验证项目</h1>
-          <p className="text-sm text-muted-foreground md:text-base">
-            验证单选、多选、分组、禁用项与键盘交互。
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives 验证项目</h1>
+              <p className="text-sm text-muted-foreground md:text-base">
+                验证单选、多选、分组、禁用项与键盘交互。
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+              {(['system', 'light', 'dark'] as const).map((mode) => {
+                const label = mode === 'system' ? '系统' : mode === 'light' ? '浅色' : '暗色'
+                const isActive = themePreference === mode
+
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setThemePreference(mode)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </section>
 
         <Card className="border-border/70 shadow-sm">
