@@ -64,27 +64,38 @@ function App() {
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-card p-1">
-              {(['system', 'light', 'dark'] as const).map((mode) => {
-                const label = mode === 'system' ? '系统' : mode === 'light' ? '浅色' : '暗色'
-                const isActive = themePreference === mode
+            <div className="flex items-center gap-2">
+              <a
+                href="https://github.com/clovu/react-listbox"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                GitHub
+              </a>
 
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setThemePreference(mode)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
+              <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+                {(['system', 'light', 'dark'] as const).map((mode) => {
+                  const label = mode === 'system' ? '系统' : mode === 'light' ? '浅色' : '暗色'
+                  const isActive = themePreference === mode
+
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setThemePreference(mode)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                      aria-pressed={isActive}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </section>
