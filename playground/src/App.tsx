@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './components/ui/card'
+import { DemoCard } from './components/demo-card'
+import { ThemeControls } from './components/theme-controls'
 import {
   ListboxContent,
   ListboxGroup,
@@ -11,7 +12,42 @@ import {
 
 type ThemePreference = 'light' | 'dark' | 'system'
 
+interface ListboxOption {
+  value: string
+  label: string
+  disabled?: boolean
+}
+
 const THEME_STORAGE_KEY = 'playground-theme'
+
+const singleOptions: ListboxOption[] = [
+  { value: '1', label: 'Option 1' },
+  { value: '2', label: 'Option 2' },
+  { value: '3', label: 'Option 3 (Disabled)', disabled: true },
+  { value: '4', label: 'Option 4' },
+]
+
+const multiOptions: ListboxOption[] = [
+  { value: '1', label: 'Option 1' },
+  { value: '2', label: 'Option 2' },
+  { value: '3', label: 'Option 3' },
+  { value: '4', label: 'Option 4' },
+]
+
+const readOnlyItems: ListboxOption[] = [
+  { value: 'guide-1', label: 'Getting Started' },
+  { value: 'guide-2', label: 'Components Overview' },
+  { value: 'guide-3', label: 'Accessibility Notes' },
+  { value: 'guide-4', label: 'Keyboard Interaction' },
+  { value: 'guide-5', label: 'Composition Patterns' },
+  { value: 'guide-6', label: 'Styling Recipes' },
+  { value: 'guide-7', label: 'State Management' },
+  { value: 'guide-8', label: 'Testing Checklist' },
+  { value: 'guide-9', label: 'Migration Guide' },
+  { value: 'guide-10', label: 'FAQ' },
+  { value: 'guide-11', label: 'Performance Tips' },
+  { value: 'guide-12', label: 'Troubleshooting' },
+]
 
 function isThemePreference(value: string): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system'
@@ -58,219 +94,116 @@ function App() {
         <section className="space-y-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives 验证项目</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives Playground</h1>
               <p className="text-sm text-muted-foreground md:text-base">
-                验证单选、多选、分组、禁用项与键盘交互。
+                Validate single select, multi select, grouped options, disabled options, and keyboard
+                interaction.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <a
-                href="https://github.com/clovu/react-listbox"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                GitHub
-              </a>
-
-              <div className="inline-flex items-center gap-1 rounded-lg border border-border bg-card p-1">
-                {(['system', 'light', 'dark'] as const).map((mode) => {
-                  const label = mode === 'system' ? '系统' : mode === 'light' ? '浅色' : '暗色'
-                  const isActive = themePreference === mode
-
-                  return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setThemePreference(mode)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                      aria-pressed={isActive}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <ThemeControls themePreference={themePreference} onChange={setThemePreference} />
           </div>
         </section>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>单选 Listbox（Loop）</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ListboxRoot value={singleValue} onValueChange={setSingleValue} loop>
-              <ListboxLabel>选择一个选项</ListboxLabel>
-              <ListboxContent>
-                <ListboxItem value="1">
-                  Option 1
-                </ListboxItem>
-                <ListboxItem value="2">
-                  Option 2
-                </ListboxItem>
-                <ListboxItem value="3" disabled>
-                  Option 3 (Disabled)
-                </ListboxItem>
-                <ListboxItem value="4">
-                  Option 4
-                </ListboxItem>
-              </ListboxContent>
-            </ListboxRoot>
-          </CardContent>
-          <CardFooter>
+        <DemoCard
+          title="Single Select Listbox (Loop)"
+          footer={(
             <div className="text-sm text-muted-foreground">
-              当前值:
+              Current value:
               {' '}
               <span className="font-medium text-foreground">{singleValue}</span>
             </div>
-          </CardFooter>
-        </Card>
+          )}
+        >
+          <ListboxRoot value={singleValue} onValueChange={setSingleValue} loop>
+            <ListboxLabel>Select one option</ListboxLabel>
+            <ListboxContent>
+              {singleOptions.map(option => (
+                <ListboxItem key={option.value} value={option.value} disabled={option.disabled}>
+                  {option.label}
+                </ListboxItem>
+              ))}
+            </ListboxContent>
+          </ListboxRoot>
+        </DemoCard>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>多选 Listbox</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ListboxRoot multiple value={multiValues} onValueChange={setMultiValues}>
-              <ListboxLabel>选择多个选项</ListboxLabel>
-              <ListboxContent>
-                <ListboxItem value="1">
-                  Option 1
-                </ListboxItem>
-                <ListboxItem value="2">
-                  Option 2
-                </ListboxItem>
-                <ListboxItem value="3">
-                  Option 3
-                </ListboxItem>
-                <ListboxItem value="4">
-                  Option 4
-                </ListboxItem>
-              </ListboxContent>
-            </ListboxRoot>
-          </CardContent>
-          <CardFooter>
+        <DemoCard
+          title="Multi Select Listbox"
+          footer={(
             <div className="text-sm text-muted-foreground">
-              当前值:
+              Current value:
               {' '}
               <span className="font-medium text-foreground">{multiValues.join(', ') || 'none'}</span>
             </div>
-          </CardFooter>
-        </Card>
+          )}
+        >
+          <ListboxRoot multiple value={multiValues} onValueChange={setMultiValues}>
+            <ListboxLabel>Select multiple options</ListboxLabel>
+            <ListboxContent>
+              {multiOptions.map(option => (
+                <ListboxItem key={option.value} value={option.value}>
+                  {option.label}
+                </ListboxItem>
+              ))}
+            </ListboxContent>
+          </ListboxRoot>
+        </DemoCard>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>分组 Listbox</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ListboxRoot value={groupedValue} onValueChange={setGroupedValue}>
-              <ListboxLabel>选择水果</ListboxLabel>
-              <ListboxContent>
-                <ListboxGroup className="mb-2 last:mb-0">
-                  <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Citrus
-                  </ListboxGroupLabel>
-                  <ListboxItem value="orange">
-                    Orange
-                  </ListboxItem>
-                  <ListboxItem value="lemon">
-                    Lemon
-                  </ListboxItem>
-                </ListboxGroup>
-
-                <ListboxGroup className="mb-2 last:mb-0">
-                  <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Other
-                  </ListboxGroupLabel>
-                  <ListboxItem value="apple">
-                    Apple
-                  </ListboxItem>
-                  <ListboxItem value="banana">
-                    Banana
-                  </ListboxItem>
-                </ListboxGroup>
-              </ListboxContent>
-            </ListboxRoot>
-          </CardContent>
-          <CardFooter>
+        <DemoCard
+          title="Grouped Listbox"
+          footer={(
             <div className="text-sm text-muted-foreground">
-              当前值:
+              Current value:
               {' '}
               <span className="font-medium text-foreground">{groupedValue}</span>
             </div>
-          </CardFooter>
-        </Card>
+          )}
+        >
+          <ListboxRoot value={groupedValue} onValueChange={setGroupedValue}>
+            <ListboxLabel>Select a fruit</ListboxLabel>
+            <ListboxContent>
+              <ListboxGroup className="mb-2 last:mb-0">
+                <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  Citrus
+                </ListboxGroupLabel>
+                <ListboxItem value="orange">Orange</ListboxItem>
+                <ListboxItem value="lemon">Lemon</ListboxItem>
+              </ListboxGroup>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>只读 Listbox</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ListboxRoot readOnly loop>
-              <ListboxLabel>只读列表</ListboxLabel>
-              <ListboxContent className="max-h-72">
-                <ListboxItem value="guide-1">
-                  Getting Started
-                </ListboxItem>
-                <ListboxItem value="guide-2">
-                  Components Overview
-                </ListboxItem>
-                <ListboxItem value="guide-3">
-                  Accessibility Notes
-                </ListboxItem>
-                <ListboxItem value="guide-4">
-                  Keyboard Interaction
-                </ListboxItem>
-                <ListboxItem value="guide-5">
-                  Composition Patterns
-                </ListboxItem>
-                <ListboxItem value="guide-6">
-                  Styling Recipes
-                </ListboxItem>
-                <ListboxItem value="guide-7">
-                  State Management
-                </ListboxItem>
-                <ListboxItem value="guide-8">
-                  Testing Checklist
-                </ListboxItem>
-                <ListboxItem value="guide-9">
-                  Migration Guide
-                </ListboxItem>
-                <ListboxItem value="guide-10">
-                  FAQ
-                </ListboxItem>
-                <ListboxItem value="guide-11">
-                  Performance Tips
-                </ListboxItem>
-                <ListboxItem value="guide-12">
-                  Troubleshooting
-                </ListboxItem>
-              </ListboxContent>
-            </ListboxRoot>
-          </CardContent>
-          <CardFooter>
-            <div className="text-sm text-muted-foreground">说明: 该列表为只读模式，不可修改选中值。</div>
-          </CardFooter>
-        </Card>
+              <ListboxGroup className="mb-2 last:mb-0">
+                <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                  Other
+                </ListboxGroupLabel>
+                <ListboxItem value="apple">Apple</ListboxItem>
+                <ListboxItem value="banana">Banana</ListboxItem>
+              </ListboxGroup>
+            </ListboxContent>
+          </ListboxRoot>
+        </DemoCard>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle>键盘测试点</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-              <li>单选: Arrow / Home / End 自动改变选中项</li>
-              <li>多选: Arrow 仅移动焦点，Space 切换，Ctrl/Cmd + A 全选</li>
-              <li>禁用项应无法选中且被导航跳过</li>
-            </ul>
-          </CardContent>
-        </Card>
+        <DemoCard
+          title="Read-only Listbox"
+          footer={<div className="text-sm text-muted-foreground">Note: this list is read-only and cannot change selection.</div>}
+        >
+          <ListboxRoot readOnly loop>
+            <ListboxLabel>Read-only list</ListboxLabel>
+            <ListboxContent className="max-h-72">
+              {readOnlyItems.map(item => (
+                <ListboxItem key={item.value} value={item.value}>
+                  {item.label}
+                </ListboxItem>
+              ))}
+            </ListboxContent>
+          </ListboxRoot>
+        </DemoCard>
+
+        <DemoCard title="Keyboard Checklist">
+          <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+            <li>Single select: Arrow / Home / End automatically update the selected option.</li>
+            <li>Multi select: Arrow only moves focus, Space toggles, Ctrl/Cmd + A selects all.</li>
+            <li>Disabled options cannot be selected and are skipped during keyboard navigation.</li>
+          </ul>
+        </DemoCard>
       </div>
     </main>
   )
