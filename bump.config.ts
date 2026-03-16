@@ -4,5 +4,4 @@ export default defineConfig({
   files: [
     'packages/*/package.json',
   ],
-  recursive: true,
 })

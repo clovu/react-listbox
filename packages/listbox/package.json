@@ -3,7 +3,20 @@
   "type": "module",
   "version": "0.0.0",
   "description": "Accessible listbox primitives for React",
+  "author": "Clover You <hi@clovu.me>",
   "license": "MIT",
+  "funding": "https://github.com/sponsors/clovu",
+  "homepage": "https://github.com/clovu/react-listbox#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clovu/react-listbox.git"
+  },
+  "bugs": "https://github.com/clovu/react-listbox/issues",
+  "keywords": [
+    "listbox",
+    "react",
+    "headless"
+  ],
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
