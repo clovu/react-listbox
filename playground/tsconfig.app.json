@@ -12,7 +12,8 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@listbox/react": ["../packages/listbox/src/index.ts"]
     },
     "types": ["vite/client"],
     "allowImportingTsExtensions": true,
@@ -28,5 +29,5 @@
     "skipLibCheck": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "../packages/listbox/src"]
 }
