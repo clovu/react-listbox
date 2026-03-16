@@ -1,4 +1,5 @@
 import antfu from '@antfu/eslint-config'
+import cspellPlugin from '@cspell/eslint-plugin'
 
 export default antfu(
   {
@@ -7,7 +8,10 @@ export default antfu(
     pnpm: true,
   },
   {
-    ignores: ['.agents/**', '.claude/**/*.md'],
+    plugins: [cspellPlugin],
+  },
+  {
+    ignores: ['.agents/', '.claude/**/*.md'],
   },
   {
     rules: {

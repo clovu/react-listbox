@@ -1,7 +1,7 @@
 {
   "name": "react-listbox-root",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "packageManager": "pnpm@10.25.0",
   "author": "Clover You <hi@clovu.me>",
   "license": "MIT",
@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsdown && pnpm -C playground build",
     "build:lib": "tsdown",
+    "lint:spell": "cspell lint *",
     "dev": "pnpm run build:lib && pnpm run dev:all",
     "dev:all": "pnpm run dev:lib & pnpm run dev:playground",
     "dev:lib": "tsdown --watch",
@@ -46,9 +47,12 @@
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
     "@antfu/ni": "catalog:",
+    "@cspell/dict-lorem-ipsum": "catalog:",
+    "@cspell/eslint-plugin": "catalog:",
     "@eslint-react/eslint-plugin": "catalog:",
     "@types/node": "catalog:",
     "bumpp": "catalog:",
+    "cspell": "catalog:",
     "eslint": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
     "eslint-plugin-react-refresh": "catalog:",

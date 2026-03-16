@@ -1,0 +1,15 @@
+antfu
+bumpp
+clsx
+cmdk
+esbuild
+lucide
+shadcn
+tsdown
+vite
+vitejs
+vitest
+typedarrays
+fontsource
+tinyexec
+publint
