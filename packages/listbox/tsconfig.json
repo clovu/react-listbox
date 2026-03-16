@@ -1,7 +1,9 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.settings.json",
   "compilerOptions": {
+    "composite": true,
     "jsx": "react-jsx",
     "lib": ["DOM", "ESNext"]
-  }
+  },
+  "include": ["src"]
 }

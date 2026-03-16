@@ -39,7 +39,7 @@
     "release": "bumpp && pnpm -r publish --access=public",
     "start": "pnpm run dev",
     "test": "vitest",
-    "typecheck": "tsc",
+    "typecheck": "tsc -b",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
