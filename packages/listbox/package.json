@@ -1,7 +1,7 @@
 {
   "name": "@listbox/react",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Accessible listbox primitives for React",
   "author": "Clover You <hi@clovu.me>",
   "license": "MIT",
