@@ -5,7 +5,7 @@ import type {
   ListboxItemProps,
   ListboxLabelProps,
   ListboxRootProps,
-} from '@listbox/react'
+} from 'react-listbox-primitives'
 import {
   ListboxContent as ListboxPrimitiveContent,
   ListboxGroup as ListboxPrimitiveGroup,
@@ -13,7 +13,7 @@ import {
   ListboxItem as ListboxPrimitiveItem,
   ListboxLabel as ListboxPrimitiveLabel,
   ListboxRoot,
-} from '@listbox/react'
+} from 'react-listbox-primitives'
 import { cn } from '@/lib/utils'
 
 function Listbox({ children, ...props }: ListboxRootProps) {

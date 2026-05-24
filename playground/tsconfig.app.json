@@ -13,7 +13,7 @@
     "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"],
-      "@listbox/react": ["../packages/listbox/src/index.ts"]
+      "react-listbox-primitives": ["../packages/listbox/src/index.ts"]
     },
     "types": ["vite/client"],
     "allowImportingTsExtensions": true,

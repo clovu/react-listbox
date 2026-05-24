@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "catalog:",
-    "@listbox/react": "workspace:^",
     "@tailwindcss/vite": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
@@ -19,6 +18,7 @@
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-listbox-primitives": "workspace:^",
     "shadcn": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",

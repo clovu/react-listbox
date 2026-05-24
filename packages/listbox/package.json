@@ -1,5 +1,5 @@
 {
-  "name": "@listbox/react",
+  "name": "react-listbox-primitives",
   "type": "module",
   "version": "0.0.1",
   "description": "Accessible listbox primitives for React",

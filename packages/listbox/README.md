@@ -1,4 +1,4 @@
-# @listbox/react
+# react-listbox-primitives
 
 Accessible listbox primitives for React.
 
@@ -15,19 +15,19 @@ Accessible listbox primitives for React.
 ## Installation
 
 ```bash
-pnpm add @listbox/react
+pnpm add react-listbox-primitives
 ```
 
 ## Usage
 
 ```tsx
+import { useState } from 'react'
 import {
   ListboxContent,
   ListboxItem,
   ListboxLabel,
   ListboxRoot,
-} from '@listbox/react'
-import { useState } from 'react'
+} from 'react-listbox-primitives'
 
 export function Example() {
   const [value, setValue] = useState('2')

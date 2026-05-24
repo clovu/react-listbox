@@ -6,7 +6,7 @@ Accessible listbox primitives for React.
 
 | Package | Description |
 | --- | --- |
-| [`@listbox/react`](./packages/listbox) | Public library package with listbox primitives (`ListboxRoot`, `ListboxContent`, `ListboxItem`, etc.). |
+| [`react-listbox-primitives`](./packages/listbox) | Public library package with listbox primitives (`ListboxRoot`, `ListboxContent`, `ListboxItem`, etc.). |
 | [`playground`](./playground) | Internal playground app for manual verification and local demos. |
 
 ## Quick Start
@@ -16,7 +16,7 @@ pnpm i
 pnpm dev
 ```
 
-- `pnpm dev`: run `@listbox/react` tsdown watch + playground dev together (recommended)
+- `pnpm dev`: run `react-listbox-primitives` tsdown watch + playground dev together (recommended)
 - `pnpm start`: same as `pnpm dev`
 
 ## Development

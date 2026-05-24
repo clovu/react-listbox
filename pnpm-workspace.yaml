@@ -61,5 +61,5 @@ onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks
 allowBuilds:
-  msw: set this to true or false
-  simple-git-hooks: set this to true or false
+  msw: true
+  simple-git-hooks: true

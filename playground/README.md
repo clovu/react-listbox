@@ -1,3 +1,3 @@
 # playground
 
-Local Vite playground for validating `@listbox/react` behavior.
+Local Vite playground for validating `react-listbox-primitives` behavior.
