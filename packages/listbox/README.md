@@ -10,7 +10,7 @@ Accessible listbox primitives for React.
 
 - Single and multiple selection modes
 - Controlled and uncontrolled value state
-- Keyboard navigation (Arrow, Home, End, Enter, Space, Ctrl/Cmd+A)
+- APG-style keyboard navigation (Arrow, Home, End, Enter, Space, typeahead, Shift range, Ctrl/Cmd+A)
 - Group and group-label semantics
 - `readOnly`, `disabled`, `required`, `orientation`, and `loop` support
 - Composable primitives via `asChild`
@@ -104,14 +104,25 @@ export function Example() {
 - `required?: boolean`
 - `orientation?: 'vertical' | 'horizontal'`
 
+### `ListboxItem` props
+
+- `value: string`
+- `disabled?: boolean`
+- `textValue?: string`
+- `asChild?: boolean`
+
+Use `textValue` when the option renders icons, abbreviations, or other children whose text content is not the desired typeahead search string.
+
 ## Keyboard & Accessibility
 
 `ListboxContent` renders `role="listbox"` and items render `role="option"`.
 
-- Arrow keys navigate active option (`Up/Down` for vertical, `Left/Right` for horizontal)
-- `Home` and `End` jump to first/last enabled option
-- Single-select: `Enter` and `Space` select active option
-- Multi-select: `Space` toggles active option, `Ctrl/Cmd + A` selects all enabled options
+- Arrow keys move the active option and skip disabled options
+- Horizontal listboxes also accept `ArrowDown` and `ArrowUp` as next/previous aliases
+- `Home` and `End` jump to the first/last enabled option
+- Printable character keys perform typeahead search
+- Single-select: focus movement follows selection
+- Multi-select: `Space` toggles the active option, `Shift + Arrow` extends a range, `Ctrl/Cmd + A` toggles all enabled options
 - Disabled options are skipped during keyboard navigation
 
 ## Styling Hooks

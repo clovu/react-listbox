@@ -91,9 +91,9 @@ function App() {
   return (
     <main className="min-h-screen bg-linear-to-b from-background to-muted/30 py-10">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4">
-        <section className="space-y-2">
+        <section className="flex flex-col gap-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives Playground</h1>
               <p className="text-sm text-muted-foreground md:text-base">
                 Validate single select, multi select, grouped options, disabled options, and keyboard
@@ -198,10 +198,11 @@ function App() {
         </DemoCard>
 
         <DemoCard title="Keyboard Checklist">
-          <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-            <li>Single select: Arrow / Home / End automatically update the selected option.</li>
-            <li>Multi select: Arrow only moves focus, Space toggles, Ctrl/Cmd + A selects all.</li>
-            <li>Disabled options cannot be selected and are skipped during keyboard navigation.</li>
+          <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-muted-foreground">
+            <li>Single select: Arrow / Home / End move focus and selection together.</li>
+            <li>Typeahead: printable keys search enabled options using visible text or `textValue`.</li>
+            <li>Multi select: Arrow moves focus, Space toggles, Shift + Arrow extends range, Ctrl/Cmd + A toggles enabled options.</li>
+            <li>Disabled options are skipped during keyboard navigation and bulk selection.</li>
           </ul>
         </DemoCard>
       </div>

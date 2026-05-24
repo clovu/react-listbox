@@ -1,11 +1,5 @@
-import type {
-  ComponentPropsWithoutRef,
-  KeyboardEvent,
-  MouseEvent,
-  ReactNode,
-  Ref,
-  RefObject,
-} from 'react'
+import type { KeyboardEvent, MouseEvent, Ref, SyntheticEvent } from 'react'
+import type { CollectionItem } from './listbox-collection'
 import type {
   ListboxContentProps,
   ListboxGroupLabelProps,
@@ -13,196 +7,65 @@ import type {
   ListboxItemProps,
   ListboxLabelProps,
   ListboxRootProps,
-  Orientation,
 } from './types'
-import { composeRefs } from '@radix-ui/react-compose-refs'
-import { createContext } from '@radix-ui/react-context'
 import { Primitive } from '@radix-ui/react-primitive'
 import { Slot } from '@radix-ui/react-slot'
 import { useControllableState } from '@radix-ui/react-use-controllable-state'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+  clearSelectedValues,
+  getActiveValueFallback,
+  getEnabledItems,
+  getNextEnabledValue,
+  getOrientationKeyAliases,
+  getRangeValues,
+  getSelectedSet,
+  getSelectedValue,
+  getSelectedValues,
+  getTypeaheadResetDelay,
+  getTypeaheadValue,
+  hasSelectedAllEnabledValues,
+  isPrintableKey,
+  moveValueWithBoundary,
+  selectAllEnabledValues,
+  toggleSelectedValue,
+} from './listbox-behavior'
+import { Collection, useCollection } from './listbox-collection'
+import {
+  ListboxGroupProvider,
+  ListboxProvider,
+  useListboxContext,
+  useListboxGroupContext,
+} from './listbox-context'
 
-interface ListboxContextValue {
-  value: string | string[]
-  onValueChange: (value: string | string[]) => void
-  multiple: boolean
-  activeValue: string | null
-  setActiveValue: (value: string | null) => void
-  listboxId: string
-  labelId: string | null
-  setLabelId: (id: string | null) => void
-  disabled: boolean
-  readOnly: boolean
-  loop: boolean
-  orientation: Orientation
-  required: boolean
-}
+type DivEventHandler<E extends SyntheticEvent<HTMLDivElement>> = (event: E) => void
 
-interface ListboxGroupContextValue {
-  groupLabelId: string | null
-  setGroupLabelId: (id: string | null) => void
-}
+function composeEventHandlers<E extends SyntheticEvent<HTMLDivElement>>(
+  userHandler: DivEventHandler<E> | undefined,
+  internalHandler: DivEventHandler<E>,
+) {
+  return (event: E) => {
+    userHandler?.(event)
 
-interface CollectionItemData {
-  value: string
-  disabled: boolean
-  textValue: string
-  id: string
-}
-
-interface CollectionContextValue {
-  collectionRef: RefObject<HTMLDivElement | null>
-  itemMap: Map<HTMLElement, CollectionItemData>
-  registerItem: (node: HTMLElement, itemData: CollectionItemData) => void
-  unregisterItem: (node: HTMLElement) => void
-  version: number
-}
-
-interface CollectionItem extends CollectionItemData {
-  element: HTMLElement
-}
-
-const [ListboxProvider, useListboxContext] = createContext<ListboxContextValue>('Listbox')
-const [ListboxGroupProvider, useListboxGroupContext]
-  = createContext<ListboxGroupContextValue>('ListboxGroup')
-const [CollectionProviderImpl, useCollectionContext] = createContext<CollectionContextValue>('ListboxCollection')
-
-function CollectionProvider({ children }: { children: ReactNode }) {
-  const collectionRef = useRef<HTMLDivElement>(null)
-  const [itemMap] = useState(() => new Map<HTMLElement, CollectionItemData>())
-  const [version, setVersion] = useState(0)
-
-  const registerItem = useCallback(
-    (node: HTMLElement, itemData: CollectionItemData) => {
-      const prevItemData = itemMap.get(node)
-
-      if (
-        prevItemData
-        && prevItemData.value === itemData.value
-        && prevItemData.disabled === itemData.disabled
-        && prevItemData.textValue === itemData.textValue
-        && prevItemData.id === itemData.id
-      ) {
-        return
-      }
-
-      itemMap.set(node, itemData)
-      setVersion(v => v + 1)
-    },
-    [itemMap],
-  )
-
-  const unregisterItem = useCallback(
-    (node: HTMLElement) => {
-      const didDelete = itemMap.delete(node)
-      if (didDelete) {
-        setVersion(v => v + 1)
-      }
-    },
-    [itemMap],
-  )
-
-  const contextValue = useMemo(
-    () => ({
-      collectionRef,
-      itemMap,
-      registerItem,
-      unregisterItem,
-      version,
-    }),
-    [collectionRef, itemMap, registerItem, unregisterItem, version],
-  )
-
-  return <CollectionProviderImpl {...contextValue}>{children}</CollectionProviderImpl>
-}
-
-type CollectionSlotProps = ComponentPropsWithoutRef<'div'> & { ref?: Ref<HTMLDivElement> }
-
-function CollectionSlot({ ref: forwardedRef, ...props }: CollectionSlotProps) {
-  const { collectionRef } = useCollectionContext('CollectionSlot')
-  return <Primitive.div ref={composeRefs(collectionRef, forwardedRef)} {...props} />
-}
-
-CollectionSlot.displayName = 'CollectionSlot'
-
-interface CollectionItemSlotProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
-  itemData: CollectionItemData
-  children: ReactNode
-  asChild?: boolean
-}
-
-function CollectionItemSlot({ ref: forwardedRef, itemData, children, asChild = false, ...props }: CollectionItemSlotProps & { ref?: Ref<HTMLDivElement> }) {
-  const { registerItem, unregisterItem } = useCollectionContext('CollectionItemSlot')
-  const itemRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const node = itemRef.current
-    if (!node)
-      return
-
-    registerItem(node, {
-      ...itemData,
-      textValue: node.textContent || itemData.textValue,
-    })
-    return () => unregisterItem(node)
-  }, [itemData, registerItem, unregisterItem])
-
-  if (asChild) {
-    return (
-      <Slot ref={composeRefs(itemRef, forwardedRef)} {...props}>
-        {children}
-      </Slot>
-    )
+    if (!event.defaultPrevented)
+      internalHandler(event)
   }
-
-  return (
-    <Primitive.div ref={composeRefs(itemRef, forwardedRef)} {...props}>
-      {children}
-    </Primitive.div>
-  )
 }
 
-CollectionItemSlot.displayName = 'CollectionItemSlot'
+function getSearchValue(previousSearch: string, key: string) {
+  const nextSearch = `${previousSearch}${key}`
+  const isRepeatedCharacter = [...nextSearch].every(character => character === key)
 
-const Collection = {
-  Provider: CollectionProvider,
-  Slot: CollectionSlot,
-  ItemSlot: CollectionItemSlot,
+  return isRepeatedCharacter ? key : nextSearch
 }
 
-function useCollection() {
-  const { collectionRef, itemMap, version } = useCollectionContext('useCollection')
+function getElementId(id: string | undefined, fallbackId: string) {
+  return id ?? fallbackId
+}
 
-  return useCallback(() => {
-    void version
-    const collectionNode = collectionRef.current
-    if (!collectionNode)
-      return [] as CollectionItem[]
-
-    return [...itemMap.keys()]
-      .filter(node => collectionNode.contains(node))
-      .sort((a, b) => {
-        if (a === b)
-          return 0
-        const position = a.compareDocumentPosition(b)
-        if (position & Node.DOCUMENT_POSITION_FOLLOWING)
-          return -1
-        if (position & Node.DOCUMENT_POSITION_PRECEDING)
-          return 1
-        return 0
-      })
-      .map(element => ({
-        element,
-        ...itemMap.get(element)!,
-      }))
-  }, [collectionRef, itemMap, version])
+function focusOwningListbox(event: MouseEvent<HTMLDivElement>) {
+  const listbox = event.currentTarget.closest<HTMLElement>('[role="listbox"]')
+  listbox?.focus()
 }
 
 /**
@@ -220,8 +83,8 @@ export function ListboxRoot({
   orientation = 'vertical',
   children,
 }: ListboxRootProps) {
-  const listboxId = useId()
   const [labelId, setLabelId] = useState<string | null>(null)
+  const [activeValue, setActiveValue] = useState<string | null>(null)
 
   const [value, setValue] = useControllableState<string | string[]>({
     prop: controlledValue,
@@ -229,30 +92,24 @@ export function ListboxRoot({
     onChange: onValueChange as ((value: string | string[]) => void) | undefined,
   })
 
-  const [activeValue, setActiveValue] = useState<string | null>(null)
-
-  const contextValue = useMemo(
-    () => ({
-      value,
-      onValueChange: setValue,
-      multiple,
-      activeValue,
-      setActiveValue,
-      listboxId,
-      labelId,
-      setLabelId,
-      disabled,
-      readOnly,
-      loop,
-      orientation,
-      required,
-    }),
-    [value, setValue, multiple, activeValue, listboxId, labelId, disabled, readOnly, loop, orientation, required],
-  )
-
   return (
     <Collection.Provider>
-      <ListboxProvider {...contextValue}>{children}</ListboxProvider>
+      <ListboxProvider
+        value={value}
+        onValueChange={setValue}
+        multiple={multiple}
+        activeValue={activeValue}
+        setActiveValue={setActiveValue}
+        labelId={labelId}
+        setLabelId={setLabelId}
+        disabled={disabled}
+        readOnly={readOnly}
+        loop={loop}
+        orientation={orientation}
+        required={required}
+      >
+        {children}
+      </ListboxProvider>
     </Collection.Provider>
   )
 }
@@ -265,9 +122,16 @@ export const Listbox = ListboxRoot
 /**
  * Renders the accessible label associated with the listbox.
  */
-export function ListboxLabel({ ref, children, asChild = false, ...props }: ListboxLabelProps & { ref?: Ref<HTMLDivElement> }) {
+export function ListboxLabel({
+  ref,
+  children,
+  asChild = false,
+  id: idProp,
+  ...props
+}: ListboxLabelProps & { ref?: Ref<HTMLDivElement> }) {
   const { setLabelId } = useListboxContext('ListboxLabel')
-  const id = useId()
+  const generatedId = useId()
+  const id = getElementId(idProp, generatedId)
 
   useEffect(() => {
     setLabelId(id)
@@ -291,186 +155,276 @@ export function ListboxLabel({ ref, children, asChild = false, ...props }: Listb
 
 ListboxLabel.displayName = 'ListboxLabel'
 
+function useListboxContentBehavior() {
+  const context = useListboxContext('ListboxContent')
+  const getItems = useCollection()
+  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const getActiveItem = useCallback((items: CollectionItem[]) => {
+    return context.activeValue
+      ? items.find(item => item.value === context.activeValue) ?? null
+      : null
+  }, [context.activeValue])
+
+  const scrollToValue = useCallback((itemValue: string) => {
+    const item = getItems().find(entry => entry.value === itemValue)
+    item?.element.scrollIntoView?.({
+      block: 'nearest',
+      inline: 'nearest',
+    })
+  }, [getItems])
+
+  const setActiveAndMaybeSelect = useCallback((nextValue: string | null) => {
+    if (!nextValue)
+      return
+
+    context.setActiveValue(nextValue)
+    scrollToValue(nextValue)
+
+    if (!context.multiple && !context.readOnly && context.value !== nextValue)
+      context.onValueChange(nextValue)
+  }, [context, scrollToValue])
+
+  const toggleValue = useCallback((optionValue: string) => {
+    if (context.readOnly)
+      return
+
+    if (context.multiple) {
+      const selectedValues = getSelectedValues(context.value, true)
+      context.onValueChange(toggleSelectedValue(selectedValues, optionValue))
+      context.setLastSelectedValue(optionValue)
+      return
+    }
+
+    context.onValueChange(optionValue)
+    context.setLastSelectedValue(optionValue)
+  }, [context])
+
+  const selectRange = useCallback((toValue: string) => {
+    if (!context.multiple || context.readOnly)
+      return
+
+    const items = getItems()
+    const selectedValues = getSelectedValues(context.value, true)
+    const anchorValue = context.lastSelectedValue
+      ?? getSelectedValue(context.value, true)
+      ?? context.activeValue
+      ?? toValue
+    const rangeValues = getRangeValues(items, anchorValue, toValue)
+    const nextValues = Array.from(new Set([...selectedValues, ...rangeValues]))
+
+    context.onValueChange(nextValues)
+    context.setLastSelectedValue(anchorValue)
+  }, [context, getItems])
+
+  const toggleAllEnabledValues = useCallback(() => {
+    if (!context.multiple || context.readOnly)
+      return
+
+    const items = getItems()
+    const selectedValues = getSelectedValues(context.value, true)
+    const nextValues = hasSelectedAllEnabledValues(items, selectedValues)
+      ? clearSelectedValues()
+      : selectAllEnabledValues(items)
+
+    context.onValueChange(nextValues)
+  }, [context, getItems])
+
+  const moveToValue = useCallback((nextValue: string | null, options?: { extendSelection?: boolean }) => {
+    if (!nextValue)
+      return
+
+    context.setActiveValue(nextValue)
+    scrollToValue(nextValue)
+
+    if (options?.extendSelection) {
+      selectRange(nextValue)
+      return
+    }
+
+    if (!context.multiple && !context.readOnly && context.value !== nextValue)
+      context.onValueChange(nextValue)
+  }, [context, scrollToValue, selectRange])
+
+  const moveByDirection = useCallback((direction: 'next' | 'previous', extendSelection = false) => {
+    const items = getItems()
+    const currentValue = context.activeValue ?? getActiveValueFallback(items, context.value, context.multiple)
+    const nextValue = getNextEnabledValue(items, currentValue, direction, context.loop)
+
+    moveToValue(nextValue, { extendSelection })
+  }, [context, getItems, moveToValue])
+
+  const moveToBoundary = useCallback((edge: 'first' | 'last', extendSelection = false) => {
+    const items = getItems()
+    const nextValue = moveValueWithBoundary(items, edge)
+
+    moveToValue(nextValue, { extendSelection })
+  }, [getItems, moveToValue])
+
+  const handleTypeahead = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (!isPrintableKey(event.key) || event.altKey || event.ctrlKey || event.metaKey)
+      return false
+
+    event.preventDefault()
+
+    const items = getItems()
+    const searchValue = getSearchValue(context.typeaheadValue, event.key)
+    const nextValue = getTypeaheadValue(items, context.activeValue, searchValue)
+
+    context.setTypeaheadValue(searchValue)
+
+    if (typeaheadTimerRef.current)
+      clearTimeout(typeaheadTimerRef.current)
+
+    typeaheadTimerRef.current = setTimeout(() => {
+      context.setTypeaheadValue('')
+    }, getTypeaheadResetDelay())
+
+    if (nextValue)
+      setActiveAndMaybeSelect(nextValue)
+
+    return true
+  }, [context, getItems, setActiveAndMaybeSelect])
+
+  const handleFocus = useCallback(() => {
+    if (context.disabled || context.activeValue)
+      return
+
+    const nextValue = getActiveValueFallback(getItems(), context.value, context.multiple)
+
+    setActiveAndMaybeSelect(nextValue)
+  }, [context, getItems, setActiveAndMaybeSelect])
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (context.disabled)
+      return
+
+    const items = getItems()
+    if (getEnabledItems(items).length === 0)
+      return
+
+    const orientationKeys = getOrientationKeyAliases(context.orientation)
+
+    if (orientationKeys.next.has(event.key)) {
+      event.preventDefault()
+      moveByDirection('next', context.multiple && event.shiftKey)
+      return
+    }
+
+    if (orientationKeys.previous.has(event.key)) {
+      event.preventDefault()
+      moveByDirection('previous', context.multiple && event.shiftKey)
+      return
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault()
+      moveToBoundary('first', context.multiple && event.shiftKey)
+      return
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault()
+      moveToBoundary('last', context.multiple && event.shiftKey)
+      return
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      if (context.multiple) {
+        event.preventDefault()
+        toggleAllEnabledValues()
+      }
+      return
+    }
+
+    if (event.key === ' ') {
+      const activeItem = getActiveItem(items)
+
+      if (activeItem) {
+        event.preventDefault()
+        if (context.multiple && event.shiftKey)
+          selectRange(activeItem.value)
+        else
+          toggleValue(activeItem.value)
+      }
+      return
+    }
+
+    if (event.key === 'Enter' && !context.multiple) {
+      const activeItem = getActiveItem(items)
+
+      if (activeItem && !context.readOnly) {
+        event.preventDefault()
+        toggleValue(activeItem.value)
+      }
+      return
+    }
+
+    handleTypeahead(event)
+  }, [
+    context,
+    getActiveItem,
+    getItems,
+    handleTypeahead,
+    moveByDirection,
+    moveToBoundary,
+    selectRange,
+    toggleAllEnabledValues,
+    toggleValue,
+  ])
+
+  useEffect(() => {
+    return () => {
+      if (typeaheadTimerRef.current)
+        clearTimeout(typeaheadTimerRef.current)
+    }
+  }, [])
+
+  return {
+    getItems,
+    handleFocus,
+    handleKeyDown,
+  }
+}
+
 /**
  * Renders the focusable listbox element and handles keyboard navigation.
  */
-export function ListboxContent({ ref, children, ...props }: ListboxContentProps & { ref?: Ref<HTMLDivElement> }) {
+export function ListboxContent({
+  ref,
+  children,
+  id: idProp,
+  'aria-labelledby': ariaLabelledBy,
+  onFocus,
+  onKeyDown,
+  ...props
+}: ListboxContentProps & { ref?: Ref<HTMLDivElement> }) {
   const {
     value,
-    onValueChange,
     multiple,
     activeValue,
-    setActiveValue,
     listboxId,
     labelId,
     disabled,
     readOnly,
-    loop,
     orientation,
     required,
   } = useListboxContext('ListboxContent')
-
-  const getItems = useCollection()
-
-  const getEnabledItems = useCallback(() => getItems().filter(item => !item.disabled), [getItems])
-
-  const scrollToValue = useCallback(
-    (itemValue: string) => {
-      const item = getItems().find(entry => entry.value === itemValue)
-      if (item) {
-        item.element.scrollIntoView({
-          block: 'nearest',
-          inline: 'nearest',
-        })
-      }
-    },
-    [getItems],
-  )
-
-  const handleFocus = useCallback(() => {
-    if (activeValue)
-      return
-
-    const enabledItems = getEnabledItems()
-    if (enabledItems.length === 0)
-      return
-
-    if (multiple && Array.isArray(value)) {
-      const firstSelected = enabledItems.find(item => value.includes(item.value))
-      setActiveValue(firstSelected?.value || enabledItems[0].value)
-    }
-    else if (typeof value === 'string' && value) {
-      const selectedItem = enabledItems.find(item => item.value === value)
-      setActiveValue(selectedItem?.value || enabledItems[0].value)
-    }
-    else {
-      setActiveValue(enabledItems[0].value)
-    }
-  }, [activeValue, getEnabledItems, multiple, setActiveValue, value])
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (disabled)
-        return
-
-      const enabledItems = getEnabledItems()
-      if (enabledItems.length === 0)
-        return
-
-      const currentIndex = activeValue ? enabledItems.findIndex(item => item.value === activeValue) : -1
-      const isVertical = orientation === 'vertical'
-      const nextKey = isVertical ? 'ArrowDown' : 'ArrowRight'
-      const prevKey = isVertical ? 'ArrowUp' : 'ArrowLeft'
-
-      switch (event.key) {
-        case nextKey: {
-          event.preventDefault()
-          let nextIndex = currentIndex + 1
-          if (loop && nextIndex >= enabledItems.length) {
-            nextIndex = 0
-          }
-          if (nextIndex < enabledItems.length) {
-            const nextValue = enabledItems[nextIndex].value
-            setActiveValue(nextValue)
-            scrollToValue(nextValue)
-          }
-          break
-        }
-        case prevKey: {
-          event.preventDefault()
-          let prevIndex = currentIndex - 1
-          if (loop && prevIndex < 0) {
-            prevIndex = enabledItems.length - 1
-          }
-          if (prevIndex >= 0) {
-            const prevValue = enabledItems[prevIndex].value
-            setActiveValue(prevValue)
-            scrollToValue(prevValue)
-          }
-          break
-        }
-        case 'Home': {
-          event.preventDefault()
-          const firstValue = enabledItems[0]?.value
-          if (firstValue) {
-            setActiveValue(firstValue)
-            scrollToValue(firstValue)
-          }
-          break
-        }
-        case 'End': {
-          event.preventDefault()
-          const lastValue = enabledItems.at(-1)?.value
-          if (lastValue) {
-            setActiveValue(lastValue)
-            scrollToValue(lastValue)
-          }
-          break
-        }
-        case 'Enter': {
-          if (!readOnly && !multiple && activeValue) {
-            event.preventDefault()
-            onValueChange(activeValue)
-          }
-          break
-        }
-        case ' ': {
-          if (!readOnly && multiple && activeValue) {
-            event.preventDefault()
-            const currentValues = Array.isArray(value) ? value : []
-            const newValues = currentValues.includes(activeValue)
-              ? currentValues.filter(v => v !== activeValue)
-              : [...currentValues, activeValue]
-            onValueChange(newValues)
-          }
-          else if (!readOnly && !multiple && activeValue) {
-            event.preventDefault()
-            onValueChange(activeValue)
-          }
-          break
-        }
-        case 'a':
-        case 'A': {
-          if (!readOnly && multiple && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault()
-            onValueChange(enabledItems.map(item => item.value))
-          }
-          break
-        }
-      }
-    },
-    [
-      disabled,
-      readOnly,
-      loop,
-      getEnabledItems,
-      activeValue,
-      orientation,
-      setActiveValue,
-      scrollToValue,
-      multiple,
-      onValueChange,
-      value,
-    ],
-  )
-
-  const activeDescendantId = activeValue ? getItems().find(item => item.value === activeValue)?.id : undefined
-
-  const handleMouseLeave = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      if (event.currentTarget.contains(event.relatedTarget as Node | null))
-        return
-      setActiveValue(null)
-    },
-    [setActiveValue],
-  )
+  const { getItems, handleFocus, handleKeyDown } = useListboxContentBehavior()
+  const selectedValues = getSelectedSet(value, multiple)
+  const activeDescendantId = activeValue
+    ? getItems().find(item => item.value === activeValue)?.id
+    : undefined
+  const id = getElementId(idProp, listboxId)
+  const labelledBy = labelId ?? ariaLabelledBy
 
   return (
     <Primitive.div
       ref={ref}
+      {...props}
       role="listbox"
-      id={listboxId}
-      aria-labelledby={labelId || undefined}
+      id={id}
+      aria-labelledby={labelledBy || undefined}
       aria-multiselectable={multiple || undefined}
       aria-activedescendant={activeDescendantId}
       aria-orientation={orientation}
@@ -478,12 +432,11 @@ export function ListboxContent({ ref, children, ...props }: ListboxContentProps 
       aria-readonly={readOnly || undefined}
       aria-required={required || undefined}
       tabIndex={disabled ? -1 : 0}
-      onFocus={handleFocus}
-      onKeyDown={handleKeyDown}
-      onMouseLeave={handleMouseLeave}
+      onFocus={composeEventHandlers(onFocus, handleFocus)}
+      onKeyDown={composeEventHandlers(onKeyDown, handleKeyDown)}
       data-disabled={disabled ? '' : undefined}
       data-orientation={orientation}
-      {...props}
+      data-value={selectedValues.size > 0 ? [...selectedValues].join(' ') : undefined}
     >
       <Collection.Slot>{children}</Collection.Slot>
     </Primitive.div>
@@ -497,96 +450,94 @@ ListboxContent.displayName = 'ListboxContent'
  */
 export const ListboxList = ListboxContent
 
+function useListboxItemBehavior(optionValue: string, disabled: boolean) {
+  const context = useListboxContext('ListboxItem')
+  const isItemDisabled = disabled || context.disabled
+  const isSelected = getSelectedSet(context.value, context.multiple).has(optionValue)
+  const isHighlighted = context.activeValue === optionValue
+
+  const selectItem = useCallback(() => {
+    if (isItemDisabled || context.readOnly)
+      return
+
+    context.setActiveValue(optionValue)
+
+    if (context.multiple) {
+      context.onValueChange(toggleSelectedValue(getSelectedValues(context.value, true), optionValue))
+      context.setLastSelectedValue(optionValue)
+      return
+    }
+
+    context.onValueChange(optionValue)
+    context.setLastSelectedValue(optionValue)
+  }, [context, isItemDisabled, optionValue])
+
+  const handleMouseMove = useCallback(() => {
+    if (!isItemDisabled)
+      context.setActiveValue(optionValue)
+  }, [context, isItemDisabled, optionValue])
+
+  return {
+    isHighlighted,
+    isItemDisabled,
+    isSelected,
+    handleMouseMove,
+    selectItem,
+  }
+}
+
 /**
  * Renders a selectable option inside the listbox.
  */
-export function ListboxItem({ ref: forwardedRef, value: optionValue, disabled = false, children, asChild = false, ...props }: ListboxItemProps & { ref?: Ref<HTMLDivElement> }) {
+export function ListboxItem({
+  ref,
+  value: optionValue,
+  disabled = false,
+  textValue,
+  children,
+  asChild = false,
+  onClick,
+  onMouseMove,
+  id: idProp,
+  ...props
+}: ListboxItemProps & { ref?: Ref<HTMLDivElement> }) {
+  const generatedId = useId()
+  const id = getElementId(idProp, generatedId)
   const {
-    value,
-    onValueChange,
-    multiple,
-    activeValue,
-    setActiveValue,
-    disabled: listboxDisabled,
-    readOnly,
-  } = useListboxContext('ListboxItem')
+    isHighlighted,
+    isItemDisabled,
+    isSelected,
+    handleMouseMove,
+    selectItem,
+  } = useListboxItemBehavior(optionValue, disabled)
 
-  const id = useId()
+  const itemData = useMemo(() => ({
+    value: optionValue,
+    disabled: isItemDisabled,
+    textValue: textValue ?? '',
+    id,
+  }), [id, isItemDisabled, optionValue, textValue])
 
-  const isSelected = multiple ? Array.isArray(value) && value.includes(optionValue) : value === optionValue
+  const handleClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    focusOwningListbox(event)
+    selectItem()
+  }, [selectItem])
 
-  const isHighlighted = activeValue === optionValue
-
-  const handleMouseMove = useCallback(() => {
-    if (disabled || listboxDisabled)
-      return
-    setActiveValue(optionValue)
-  }, [disabled, listboxDisabled, setActiveValue, optionValue])
-
-  const handleClick = useCallback(() => {
-    if (disabled || listboxDisabled || readOnly)
-      return
-
-    setActiveValue(optionValue)
-
-    if (multiple) {
-      const currentValues = Array.isArray(value) ? value : []
-      const newValues = currentValues.includes(optionValue)
-        ? currentValues.filter(v => v !== optionValue)
-        : [...currentValues, optionValue]
-      onValueChange(newValues)
-    }
-    else {
-      onValueChange(optionValue)
-    }
-  }, [disabled, listboxDisabled, readOnly, setActiveValue, optionValue, multiple, value, onValueChange])
-
-  const itemData = useMemo(
-    () => ({
-      value: optionValue,
-      disabled,
-      textValue: '',
-      id,
-    }),
-    [optionValue, disabled, id],
-  )
-
-  if (asChild) {
-    return (
-      <Collection.ItemSlot asChild itemData={itemData} ref={composeRefs(forwardedRef)}>
-        <Slot
-          role="option"
-          id={id}
-          aria-selected={isSelected}
-          aria-disabled={disabled || undefined}
-          onMouseMove={handleMouseMove}
-          onClick={handleClick}
-          data-state={isSelected ? 'checked' : 'unchecked'}
-          data-highlighted={isHighlighted ? '' : undefined}
-          data-disabled={disabled ? '' : undefined}
-          {...props}
-        >
-          {children}
-        </Slot>
-      </Collection.ItemSlot>
-    )
+  const itemProps = {
+    ...props,
+    'role': 'option',
+    id,
+    'aria-selected': isSelected,
+    'aria-disabled': isItemDisabled || undefined,
+    'onMouseMove': composeEventHandlers(onMouseMove, handleMouseMove),
+    'onClick': composeEventHandlers(onClick, handleClick),
+    'data-state': isSelected ? 'checked' : 'unchecked',
+    'data-highlighted': isHighlighted ? '' : undefined,
+    'data-disabled': isItemDisabled ? '' : undefined,
   }
 
   return (
-    <Collection.ItemSlot
-      itemData={itemData}
-      ref={composeRefs(forwardedRef)}
-      role="option"
-      id={id}
-      aria-selected={isSelected}
-      aria-disabled={disabled || undefined}
-      onMouseMove={handleMouseMove}
-      onClick={handleClick}
-      data-state={isSelected ? 'checked' : 'unchecked'}
-      data-highlighted={isHighlighted ? '' : undefined}
-      data-disabled={disabled ? '' : undefined}
-      {...props}
-    >
+    <Collection.ItemSlot asChild={asChild} itemData={itemData} ref={ref} {...itemProps}>
       {children}
     </Collection.ItemSlot>
   )
@@ -602,36 +553,32 @@ export const ListboxOption = ListboxItem
 /**
  * Renders an accessible group for related listbox options.
  */
-export function ListboxGroup({ ref, children, asChild = false, ...props }: ListboxGroupProps & { ref?: Ref<HTMLDivElement> }) {
+export function ListboxGroup({
+  ref,
+  children,
+  asChild = false,
+  ...props
+}: ListboxGroupProps & { ref?: Ref<HTMLDivElement> }) {
   const [groupLabelId, setGroupLabelId] = useState<string | null>(null)
-
-  if (asChild) {
-    return (
-      <ListboxGroupProvider groupLabelId={groupLabelId} setGroupLabelId={setGroupLabelId}>
-        <Slot
-          ref={ref}
-          role="group"
-          aria-labelledby={groupLabelId || undefined}
-          data-slot="listbox-group"
-          {...props}
-        >
-          {children}
-        </Slot>
-      </ListboxGroupProvider>
-    )
+  const groupProps = {
+    ...props,
+    'role': 'group',
+    'aria-labelledby': groupLabelId || undefined,
   }
 
   return (
     <ListboxGroupProvider groupLabelId={groupLabelId} setGroupLabelId={setGroupLabelId}>
-      <Primitive.div
-        ref={ref}
-        role="group"
-        aria-labelledby={groupLabelId || undefined}
-        data-slot="listbox-group"
-        {...props}
-      >
-        {children}
-      </Primitive.div>
+      {asChild
+        ? (
+            <Slot ref={ref} {...groupProps}>
+              {children}
+            </Slot>
+          )
+        : (
+            <Primitive.div ref={ref} {...groupProps}>
+              {children}
+            </Primitive.div>
+          )}
     </ListboxGroupProvider>
   )
 }
@@ -641,9 +588,16 @@ ListboxGroup.displayName = 'ListboxGroup'
 /**
  * Renders the label associated with a `ListboxGroup`.
  */
-export function ListboxGroupLabel({ ref, children, asChild = false, ...props }: ListboxGroupLabelProps & { ref?: Ref<HTMLDivElement> }) {
+export function ListboxGroupLabel({
+  ref,
+  children,
+  asChild = false,
+  id: idProp,
+  ...props
+}: ListboxGroupLabelProps & { ref?: Ref<HTMLDivElement> }) {
   const { setGroupLabelId } = useListboxGroupContext('ListboxGroupLabel')
-  const id = useId()
+  const generatedId = useId()
+  const id = getElementId(idProp, generatedId)
 
   useEffect(() => {
     setGroupLabelId(id)

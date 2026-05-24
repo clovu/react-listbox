@@ -128,6 +128,10 @@ export interface ListboxItemProps extends DivProps {
    */
   disabled?: boolean
   /**
+   * Accessible text used for typeahead when the rendered children are not plain text.
+   */
+  textValue?: string
+  /**
    * Option content.
    */
   children: ReactNode
