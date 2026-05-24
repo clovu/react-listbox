@@ -1,6 +1,7 @@
 {
   "type": "module",
   "version": "0.0.1",
+  "private": true,
   "packageManager": "pnpm@11.1.0",
   "author": "Clover You <hi@clovu.me>",
   "license": "MIT",
@@ -14,7 +15,8 @@
   "keywords": [
     "listbox",
     "react",
-    "headless"
+    "headless",
+    "primitives"
   ],
   "sideEffects": false,
   "exports": {
