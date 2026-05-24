@@ -56,7 +56,7 @@ catalog:
   vite: ^8.0.0
   vitest: ^4.1.0
   vitest-package-exports: ^1.2.0
-  yaml: ^2.8.2
+  yaml: ^2.9.0
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks
