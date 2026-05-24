@@ -88,8 +88,8 @@ catalogs:
       specifier: ^1.16.0
       version: 1.16.0
     publint:
-      specifier: ^0.3.18
-      version: 0.3.18
+      specifier: ^0.3.21
+      version: 0.3.21
     radix-ui:
       specifier: ^1.4.3
       version: 1.4.3
@@ -181,7 +181,7 @@ importers:
         version: 16.4.0
       publint:
         specifier: 'catalog:'
-        version: 0.3.18
+        version: 0.3.21
       simple-git-hooks:
         specifier: 'catalog:'
         version: 2.13.1
@@ -190,7 +190,7 @@ importers:
         version: 1.0.4
       tsdown:
         specifier: 'catalog:'
-        version: 0.21.3(publint@0.3.18)(synckit@0.11.12)(typescript@5.9.3)
+        version: 0.21.3(publint@0.3.21)(synckit@0.11.12)(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -236,7 +236,7 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       tsdown:
         specifier: 'catalog:'
-        version: 0.21.3(publint@0.3.18)(synckit@0.11.12)(typescript@5.9.3)
+        version: 0.21.3(publint@0.3.21)(synckit@0.11.12)(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -4081,8 +4081,8 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
-  publint@0.3.18:
-    resolution: {integrity: sha512-JRJFeBTrfx4qLwEuGFPk+haJOJN97KnPuK01yj+4k/Wj5BgoOK5uNsivporiqBjk2JDaslg7qJOhGRnpltGeog==}
+  publint@0.3.21:
+    resolution: {integrity: sha512-OqejcnMV6E9zel2oCrUOJEiiFkGiAAni0A6ibfQNh1k9Gu5z4F+Yso8lllam7AzmV6Do0vp7u3UpZNRBwuXaHQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -8941,7 +8941,7 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
-  publint@0.3.18:
+  publint@0.3.21:
     dependencies:
       '@publint/pack': 0.1.4
       package-manager-detector: 1.6.0
@@ -9450,7 +9450,7 @@ snapshots:
       minimist: 1.2.8
       strip-bom: 3.0.0
 
-  tsdown@0.21.3(publint@0.3.18)(synckit@0.11.12)(typescript@5.9.3):
+  tsdown@0.21.3(publint@0.3.21)(synckit@0.11.12)(typescript@5.9.3):
     dependencies:
       ansis: 4.2.0
       cac: 7.0.0
@@ -9469,7 +9469,7 @@ snapshots:
       unconfig-core: 7.5.0
       unrun: 0.2.32(synckit@0.11.12)
     optionalDependencies:
-      publint: 0.3.18
+      publint: 0.3.21
       typescript: 5.9.3
     transitivePeerDependencies:
       - '@ts-macro/tsc'
