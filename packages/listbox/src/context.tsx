@@ -1,14 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import type { Orientation } from './types'
 import { createContext } from '@radix-ui/react-context'
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef } from 'react'
 
-interface ListboxContextValue {
+interface RootContextValue {
   /**
    * Current selected value or values.
    */
   value: string | string[]
+  /**
+   * Current selected values normalized into a lookup set.
+   */
+  selectedValues: ReadonlySet<string>
   /**
    * Updates the selected value in controlled or uncontrolled mode.
    */
@@ -30,11 +34,11 @@ interface ListboxContextValue {
    */
   listboxId: string
   /**
-   * Id of the rendered `ListboxLabel`, when present.
+   * Id of the rendered root label, when present.
    */
   labelId: string | null
   /**
-   * Registers or clears the rendered `ListboxLabel` id.
+   * Registers or clears the rendered root label id.
    */
   setLabelId: (id: string | null) => void
   /**
@@ -58,24 +62,12 @@ interface ListboxContextValue {
    */
   required: boolean
   /**
-   * Buffered printable-key search string for typeahead.
-   */
-  typeaheadValue: string
-  /**
-   * Updates the buffered typeahead search string.
-   */
-  setTypeaheadValue: (value: string) => void
-  /**
    * Anchor value used when extending multi-select ranges.
    */
-  lastSelectedValue: string | null
-  /**
-   * Updates the multi-select range anchor value.
-   */
-  setLastSelectedValue: (value: string | null) => void
+  selectionAnchorRef: RefObject<string | null>
 }
 
-interface ListboxGroupContextValue {
+interface GroupContextValue {
   /**
    * Id of the rendered group label, when present.
    */
@@ -86,11 +78,12 @@ interface ListboxGroupContextValue {
   setGroupLabelId: (id: string | null) => void
 }
 
-const [ListboxProviderImpl, useListboxContext] = createContext<ListboxContextValue>('Listbox')
-const [ListboxGroupProviderImpl, useListboxGroupContext] = createContext<ListboxGroupContextValue>('ListboxGroup')
+const [RootProviderImpl, useRootContext] = createContext<RootContextValue>('Root')
+const [GroupProviderImpl, useGroupContext] = createContext<GroupContextValue>('Group')
 
-function ListboxProvider({
+function RootProvider({
   value,
+  selectedValues,
   onValueChange,
   multiple,
   activeValue,
@@ -103,15 +96,16 @@ function ListboxProvider({
   orientation,
   required,
   children,
-}: Omit<ListboxContextValue, 'listboxId' | 'typeaheadValue' | 'setTypeaheadValue' | 'lastSelectedValue' | 'setLastSelectedValue'> & {
+}: Omit<RootContextValue, 'listboxId' | 'selectionAnchorRef'> & {
   children: ReactNode
 }) {
   const listboxId = useId()
-  const [typeaheadValue, setTypeaheadValue] = useState('')
-  const [lastSelectedValue, setLastSelectedValue] = useState<string | null>(null)
+  // Range anchors are transient interaction state and should not re-render the provider.
+  const selectionAnchorRef = useRef<string | null>(null)
 
   const contextValue = useMemo(() => ({
     value,
+    selectedValues,
     onValueChange,
     multiple,
     activeValue,
@@ -124,12 +118,10 @@ function ListboxProvider({
     loop,
     orientation,
     required,
-    typeaheadValue,
-    setTypeaheadValue,
-    lastSelectedValue,
-    setLastSelectedValue,
+    selectionAnchorRef,
   }), [
     value,
+    selectedValues,
     onValueChange,
     multiple,
     activeValue,
@@ -142,29 +134,28 @@ function ListboxProvider({
     loop,
     orientation,
     required,
-    typeaheadValue,
-    lastSelectedValue,
+    selectionAnchorRef,
   ])
 
-  return <ListboxProviderImpl {...contextValue}>{children}</ListboxProviderImpl>
+  return <RootProviderImpl {...contextValue}>{children}</RootProviderImpl>
 }
 
-function ListboxGroupProvider({
+function GroupProvider({
   groupLabelId,
   setGroupLabelId,
   children,
-}: Omit<ListboxGroupContextValue, 'children'> & { children: ReactNode }) {
+}: Omit<GroupContextValue, 'children'> & { children: ReactNode }) {
   const contextValue = useMemo(() => ({
     groupLabelId,
     setGroupLabelId,
   }), [groupLabelId, setGroupLabelId])
 
-  return <ListboxGroupProviderImpl {...contextValue}>{children}</ListboxGroupProviderImpl>
+  return <GroupProviderImpl {...contextValue}>{children}</GroupProviderImpl>
 }
 
 export {
-  ListboxGroupProvider,
-  ListboxProvider,
-  useListboxContext,
-  useListboxGroupContext,
+  GroupProvider,
+  RootProvider,
+  useGroupContext,
+  useRootContext,
 }

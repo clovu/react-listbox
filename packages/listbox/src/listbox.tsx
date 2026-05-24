@@ -1,12 +1,13 @@
 import type { KeyboardEvent, MouseEvent, Ref, SyntheticEvent } from 'react'
-import type { CollectionItem } from './listbox-collection'
+import type { NavigationBoundary, NavigationDirection } from './behavior'
+import type { CollectionItem } from './collection'
 import type {
-  ListboxContentProps,
-  ListboxGroupLabelProps,
-  ListboxGroupProps,
-  ListboxItemProps,
-  ListboxLabelProps,
-  ListboxRootProps,
+  ContentProps,
+  GroupLabelProps,
+  GroupProps,
+  ItemProps,
+  LabelProps,
+  RootProps,
 } from './types'
 import { Primitive } from '@radix-ui/react-primitive'
 import { Slot } from '@radix-ui/react-slot'
@@ -15,28 +16,29 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   clearSelectedValues,
   getActiveValueFallback,
-  getEnabledItems,
+  getItemByValue,
+  getKeyboardAction,
   getNextEnabledValue,
-  getOrientationKeyAliases,
   getRangeValues,
+  getSearchValue,
   getSelectedSet,
   getSelectedValue,
   getSelectedValues,
   getTypeaheadResetDelay,
   getTypeaheadValue,
+  hasEnabledItems,
   hasSelectedAllEnabledValues,
-  isPrintableKey,
   moveValueWithBoundary,
   selectAllEnabledValues,
   toggleSelectedValue,
-} from './listbox-behavior'
-import { Collection, useCollection } from './listbox-collection'
+} from './behavior'
+import { Collection, useCollection } from './collection'
 import {
-  ListboxGroupProvider,
-  ListboxProvider,
-  useListboxContext,
-  useListboxGroupContext,
-} from './listbox-context'
+  GroupProvider,
+  RootProvider,
+  useGroupContext,
+  useRootContext,
+} from './context'
 
 type DivEventHandler<E extends SyntheticEvent<HTMLDivElement>> = (event: E) => void
 
@@ -50,13 +52,6 @@ function composeEventHandlers<E extends SyntheticEvent<HTMLDivElement>>(
     if (!event.defaultPrevented)
       internalHandler(event)
   }
-}
-
-function getSearchValue(previousSearch: string, key: string) {
-  const nextSearch = `${previousSearch}${key}`
-  const isRepeatedCharacter = [...nextSearch].every(character => character === key)
-
-  return isRepeatedCharacter ? key : nextSearch
 }
 
 function getElementId(id: string | undefined, fallbackId: string) {
@@ -82,7 +77,7 @@ export function ListboxRoot({
   defaultValue,
   orientation = 'vertical',
   children,
-}: ListboxRootProps) {
+}: RootProps) {
   const [labelId, setLabelId] = useState<string | null>(null)
   const [activeValue, setActiveValue] = useState<string | null>(null)
 
@@ -91,11 +86,13 @@ export function ListboxRoot({
     defaultProp: defaultValue ?? (multiple ? [] : ''),
     onChange: onValueChange as ((value: string | string[]) => void) | undefined,
   })
+  const selectedValues = useMemo(() => getSelectedSet(value, multiple), [multiple, value])
 
   return (
     <Collection.Provider>
-      <ListboxProvider
+      <RootProvider
         value={value}
+        selectedValues={selectedValues}
         onValueChange={setValue}
         multiple={multiple}
         activeValue={activeValue}
@@ -109,7 +106,7 @@ export function ListboxRoot({
         required={required}
       >
         {children}
-      </ListboxProvider>
+      </RootProvider>
     </Collection.Provider>
   )
 }
@@ -128,8 +125,8 @@ export function ListboxLabel({
   asChild = false,
   id: idProp,
   ...props
-}: ListboxLabelProps & { ref?: Ref<HTMLDivElement> }) {
-  const { setLabelId } = useListboxContext('ListboxLabel')
+}: LabelProps & { ref?: Ref<HTMLDivElement> }) {
+  const { setLabelId } = useRootContext('Label')
   const generatedId = useId()
   const id = getElementId(idProp, generatedId)
 
@@ -155,16 +152,28 @@ export function ListboxLabel({
 
 ListboxLabel.displayName = 'ListboxLabel'
 
-function useListboxContentBehavior() {
-  const context = useListboxContext('ListboxContent')
+function useContentBehavior() {
+  const {
+    value,
+    selectedValues,
+    onValueChange,
+    multiple,
+    activeValue,
+    setActiveValue,
+    disabled,
+    readOnly,
+    loop,
+    orientation,
+    selectionAnchorRef,
+  } = useRootContext('Content')
   const getItems = useCollection()
+  // Typeahead is transient input state; refs avoid re-rendering on every printable key.
+  const typeaheadValueRef = useRef('')
   const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const getActiveItem = useCallback((items: CollectionItem[]) => {
-    return context.activeValue
-      ? items.find(item => item.value === context.activeValue) ?? null
-      : null
-  }, [context.activeValue])
+    return getItemByValue(items, activeValue)
+  }, [activeValue])
 
   const scrollToValue = useCallback((itemValue: string) => {
     const item = getItems().find(entry => entry.value === itemValue)
@@ -174,67 +183,70 @@ function useListboxContentBehavior() {
     })
   }, [getItems])
 
+  const setSelectionAnchor = useCallback((nextValue: string) => {
+    selectionAnchorRef.current = nextValue
+  }, [selectionAnchorRef])
+
   const setActiveAndMaybeSelect = useCallback((nextValue: string | null) => {
     if (!nextValue)
       return
 
-    context.setActiveValue(nextValue)
+    setActiveValue(nextValue)
     scrollToValue(nextValue)
 
-    if (!context.multiple && !context.readOnly && context.value !== nextValue)
-      context.onValueChange(nextValue)
-  }, [context, scrollToValue])
+    if (!multiple && !readOnly && value !== nextValue)
+      onValueChange(nextValue)
+  }, [multiple, onValueChange, readOnly, scrollToValue, setActiveValue, value])
 
   const toggleValue = useCallback((optionValue: string) => {
-    if (context.readOnly)
+    if (readOnly)
       return
 
-    if (context.multiple) {
-      const selectedValues = getSelectedValues(context.value, true)
-      context.onValueChange(toggleSelectedValue(selectedValues, optionValue))
-      context.setLastSelectedValue(optionValue)
+    if (multiple) {
+      const selectedValueList = getSelectedValues(value, true)
+      onValueChange(toggleSelectedValue(selectedValueList, optionValue))
+      setSelectionAnchor(optionValue)
       return
     }
 
-    context.onValueChange(optionValue)
-    context.setLastSelectedValue(optionValue)
-  }, [context])
+    onValueChange(optionValue)
+    setSelectionAnchor(optionValue)
+  }, [multiple, onValueChange, readOnly, setSelectionAnchor, value])
 
   const selectRange = useCallback((toValue: string) => {
-    if (!context.multiple || context.readOnly)
+    if (!multiple || readOnly)
       return
 
     const items = getItems()
-    const selectedValues = getSelectedValues(context.value, true)
-    const anchorValue = context.lastSelectedValue
-      ?? getSelectedValue(context.value, true)
-      ?? context.activeValue
+    const selectedValueList = getSelectedValues(value, true)
+    const anchorValue = selectionAnchorRef.current
+      ?? getSelectedValue(value, true)
+      ?? activeValue
       ?? toValue
     const rangeValues = getRangeValues(items, anchorValue, toValue)
-    const nextValues = Array.from(new Set([...selectedValues, ...rangeValues]))
+    const nextValues = Array.from(new Set([...selectedValueList, ...rangeValues]))
 
-    context.onValueChange(nextValues)
-    context.setLastSelectedValue(anchorValue)
-  }, [context, getItems])
+    onValueChange(nextValues)
+    setSelectionAnchor(anchorValue)
+  }, [activeValue, getItems, multiple, onValueChange, readOnly, selectionAnchorRef, setSelectionAnchor, value])
 
   const toggleAllEnabledValues = useCallback(() => {
-    if (!context.multiple || context.readOnly)
+    if (!multiple || readOnly)
       return
 
     const items = getItems()
-    const selectedValues = getSelectedValues(context.value, true)
     const nextValues = hasSelectedAllEnabledValues(items, selectedValues)
       ? clearSelectedValues()
       : selectAllEnabledValues(items)
 
-    context.onValueChange(nextValues)
-  }, [context, getItems])
+    onValueChange(nextValues)
+  }, [getItems, multiple, onValueChange, readOnly, selectedValues])
 
   const moveToValue = useCallback((nextValue: string | null, options?: { extendSelection?: boolean }) => {
     if (!nextValue)
       return
 
-    context.setActiveValue(nextValue)
+    setActiveValue(nextValue)
     scrollToValue(nextValue)
 
     if (options?.extendSelection) {
@@ -242,143 +254,146 @@ function useListboxContentBehavior() {
       return
     }
 
-    if (!context.multiple && !context.readOnly && context.value !== nextValue)
-      context.onValueChange(nextValue)
-  }, [context, scrollToValue, selectRange])
+    if (!multiple && !readOnly && value !== nextValue)
+      onValueChange(nextValue)
+  }, [multiple, onValueChange, readOnly, scrollToValue, selectRange, setActiveValue, value])
 
-  const moveByDirection = useCallback((direction: 'next' | 'previous', extendSelection = false) => {
+  const moveByDirection = useCallback((direction: NavigationDirection, extendSelection = false) => {
     const items = getItems()
-    const currentValue = context.activeValue ?? getActiveValueFallback(items, context.value, context.multiple)
-    const nextValue = getNextEnabledValue(items, currentValue, direction, context.loop)
+    const currentValue = activeValue ?? getActiveValueFallback(items, value, multiple)
+    const nextValue = getNextEnabledValue(items, currentValue, direction, loop)
 
     moveToValue(nextValue, { extendSelection })
-  }, [context, getItems, moveToValue])
+  }, [activeValue, getItems, loop, moveToValue, multiple, value])
 
-  const moveToBoundary = useCallback((edge: 'first' | 'last', extendSelection = false) => {
+  const moveToBoundary = useCallback((edge: NavigationBoundary, extendSelection = false) => {
     const items = getItems()
     const nextValue = moveValueWithBoundary(items, edge)
 
     moveToValue(nextValue, { extendSelection })
   }, [getItems, moveToValue])
 
-  const handleTypeahead = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (!isPrintableKey(event.key) || event.altKey || event.ctrlKey || event.metaKey)
-      return false
+  const clearTypeaheadTimer = useCallback(() => {
+    if (!typeaheadTimerRef.current)
+      return
 
-    event.preventDefault()
+    clearTimeout(typeaheadTimerRef.current)
+    typeaheadTimerRef.current = null
+  }, [])
 
-    const items = getItems()
-    const searchValue = getSearchValue(context.typeaheadValue, event.key)
-    const nextValue = getTypeaheadValue(items, context.activeValue, searchValue)
-
-    context.setTypeaheadValue(searchValue)
-
-    if (typeaheadTimerRef.current)
-      clearTimeout(typeaheadTimerRef.current)
-
+  const scheduleTypeaheadReset = useCallback(() => {
+    clearTypeaheadTimer()
     typeaheadTimerRef.current = setTimeout(() => {
-      context.setTypeaheadValue('')
+      typeaheadValueRef.current = ''
+      typeaheadTimerRef.current = null
     }, getTypeaheadResetDelay())
+  }, [clearTypeaheadTimer])
+
+  const handleTypeahead = useCallback((key: string) => {
+    const items = getItems()
+    const searchValue = getSearchValue(typeaheadValueRef.current, key)
+    const nextValue = getTypeaheadValue(items, activeValue, searchValue)
+
+    typeaheadValueRef.current = searchValue
+    scheduleTypeaheadReset()
 
     if (nextValue)
       setActiveAndMaybeSelect(nextValue)
-
-    return true
-  }, [context, getItems, setActiveAndMaybeSelect])
+  }, [activeValue, getItems, scheduleTypeaheadReset, setActiveAndMaybeSelect])
 
   const handleFocus = useCallback(() => {
-    if (context.disabled || context.activeValue)
+    if (disabled || activeValue)
       return
 
-    const nextValue = getActiveValueFallback(getItems(), context.value, context.multiple)
+    const nextValue = getActiveValueFallback(getItems(), value, multiple)
 
     setActiveAndMaybeSelect(nextValue)
-  }, [context, getItems, setActiveAndMaybeSelect])
+  }, [activeValue, disabled, getItems, multiple, setActiveAndMaybeSelect, value])
+
+  const toggleActiveItem = useCallback((items: CollectionItem[], extendSelection: boolean) => {
+    const activeItem = getActiveItem(items)
+
+    if (!activeItem)
+      return false
+
+    if (extendSelection)
+      selectRange(activeItem.value)
+    else
+      toggleValue(activeItem.value)
+
+    return true
+  }, [getActiveItem, selectRange, toggleValue])
+
+  const commitActiveItem = useCallback((items: CollectionItem[]) => {
+    if (readOnly)
+      return false
+
+    const activeItem = getActiveItem(items)
+
+    if (!activeItem)
+      return false
+
+    toggleValue(activeItem.value)
+    return true
+  }, [getActiveItem, readOnly, toggleValue])
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (context.disabled)
+    if (disabled)
       return
 
     const items = getItems()
-    if (getEnabledItems(items).length === 0)
+    if (!hasEnabledItems(items))
       return
 
-    const orientationKeys = getOrientationKeyAliases(context.orientation)
+    const action = getKeyboardAction(event, {
+      multiple,
+      orientation,
+    })
 
-    if (orientationKeys.next.has(event.key)) {
-      event.preventDefault()
-      moveByDirection('next', context.multiple && event.shiftKey)
-      return
-    }
-
-    if (orientationKeys.previous.has(event.key)) {
-      event.preventDefault()
-      moveByDirection('previous', context.multiple && event.shiftKey)
-      return
-    }
-
-    if (event.key === 'Home') {
-      event.preventDefault()
-      moveToBoundary('first', context.multiple && event.shiftKey)
-      return
-    }
-
-    if (event.key === 'End') {
-      event.preventDefault()
-      moveToBoundary('last', context.multiple && event.shiftKey)
-      return
-    }
-
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-      if (context.multiple) {
+    switch (action.type) {
+      case 'move':
+        event.preventDefault()
+        moveByDirection(action.direction, action.extendSelection)
+        break
+      case 'boundary':
+        event.preventDefault()
+        moveToBoundary(action.edge, action.extendSelection)
+        break
+      case 'toggleAll':
         event.preventDefault()
         toggleAllEnabledValues()
-      }
-      return
-    }
-
-    if (event.key === ' ') {
-      const activeItem = getActiveItem(items)
-
-      if (activeItem) {
+        break
+      case 'toggle':
+        if (toggleActiveItem(items, action.extendSelection))
+          event.preventDefault()
+        break
+      case 'commit':
+        if (commitActiveItem(items))
+          event.preventDefault()
+        break
+      case 'typeahead':
         event.preventDefault()
-        if (context.multiple && event.shiftKey)
-          selectRange(activeItem.value)
-        else
-          toggleValue(activeItem.value)
-      }
-      return
+        handleTypeahead(action.key)
+        break
+      case 'none':
+        break
     }
-
-    if (event.key === 'Enter' && !context.multiple) {
-      const activeItem = getActiveItem(items)
-
-      if (activeItem && !context.readOnly) {
-        event.preventDefault()
-        toggleValue(activeItem.value)
-      }
-      return
-    }
-
-    handleTypeahead(event)
   }, [
-    context,
-    getActiveItem,
+    commitActiveItem,
+    disabled,
     getItems,
     handleTypeahead,
     moveByDirection,
     moveToBoundary,
-    selectRange,
+    multiple,
+    orientation,
+    toggleActiveItem,
     toggleAllEnabledValues,
-    toggleValue,
   ])
 
   useEffect(() => {
-    return () => {
-      if (typeaheadTimerRef.current)
-        clearTimeout(typeaheadTimerRef.current)
-    }
-  }, [])
+    return clearTypeaheadTimer
+  }, [clearTypeaheadTimer])
 
   return {
     getItems,
@@ -398,9 +413,9 @@ export function ListboxContent({
   onFocus,
   onKeyDown,
   ...props
-}: ListboxContentProps & { ref?: Ref<HTMLDivElement> }) {
+}: ContentProps & { ref?: Ref<HTMLDivElement> }) {
   const {
-    value,
+    selectedValues,
     multiple,
     activeValue,
     listboxId,
@@ -409,12 +424,14 @@ export function ListboxContent({
     readOnly,
     orientation,
     required,
-  } = useListboxContext('ListboxContent')
-  const { getItems, handleFocus, handleKeyDown } = useListboxContentBehavior()
-  const selectedValues = getSelectedSet(value, multiple)
-  const activeDescendantId = activeValue
-    ? getItems().find(item => item.value === activeValue)?.id
-    : undefined
+  } = useRootContext('Content')
+  const { getItems, handleFocus, handleKeyDown } = useContentBehavior()
+  const activeDescendantId = useMemo(() => {
+    return activeValue ? getItemByValue(getItems(), activeValue)?.id : undefined
+  }, [activeValue, getItems])
+  const selectedDataValue = useMemo(() => {
+    return selectedValues.size > 0 ? [...selectedValues].join(' ') : undefined
+  }, [selectedValues])
   const id = getElementId(idProp, listboxId)
   const labelledBy = labelId ?? ariaLabelledBy
 
@@ -436,7 +453,7 @@ export function ListboxContent({
       onKeyDown={composeEventHandlers(onKeyDown, handleKeyDown)}
       data-disabled={disabled ? '' : undefined}
       data-orientation={orientation}
-      data-value={selectedValues.size > 0 ? [...selectedValues].join(' ') : undefined}
+      data-value={selectedDataValue}
     >
       <Collection.Slot>{children}</Collection.Slot>
     </Primitive.div>
@@ -450,32 +467,46 @@ ListboxContent.displayName = 'ListboxContent'
  */
 export const ListboxList = ListboxContent
 
-function useListboxItemBehavior(optionValue: string, disabled: boolean) {
-  const context = useListboxContext('ListboxItem')
-  const isItemDisabled = disabled || context.disabled
-  const isSelected = getSelectedSet(context.value, context.multiple).has(optionValue)
-  const isHighlighted = context.activeValue === optionValue
+function useItemBehavior(optionValue: string, disabled: boolean) {
+  const {
+    value,
+    selectedValues,
+    onValueChange,
+    multiple,
+    activeValue,
+    setActiveValue,
+    disabled: rootDisabled,
+    readOnly,
+    selectionAnchorRef,
+  } = useRootContext('Item')
+  const isItemDisabled = disabled || rootDisabled
+  const isSelected = selectedValues.has(optionValue)
+  const isHighlighted = activeValue === optionValue
+
+  const setSelectionAnchor = useCallback(() => {
+    selectionAnchorRef.current = optionValue
+  }, [optionValue, selectionAnchorRef])
 
   const selectItem = useCallback(() => {
-    if (isItemDisabled || context.readOnly)
+    if (isItemDisabled || readOnly)
       return
 
-    context.setActiveValue(optionValue)
+    setActiveValue(optionValue)
 
-    if (context.multiple) {
-      context.onValueChange(toggleSelectedValue(getSelectedValues(context.value, true), optionValue))
-      context.setLastSelectedValue(optionValue)
+    if (multiple) {
+      onValueChange(toggleSelectedValue(getSelectedValues(value, true), optionValue))
+      setSelectionAnchor()
       return
     }
 
-    context.onValueChange(optionValue)
-    context.setLastSelectedValue(optionValue)
-  }, [context, isItemDisabled, optionValue])
+    onValueChange(optionValue)
+    setSelectionAnchor()
+  }, [isItemDisabled, multiple, onValueChange, optionValue, readOnly, setActiveValue, setSelectionAnchor, value])
 
   const handleMouseMove = useCallback(() => {
     if (!isItemDisabled)
-      context.setActiveValue(optionValue)
-  }, [context, isItemDisabled, optionValue])
+      setActiveValue(optionValue)
+  }, [isItemDisabled, optionValue, setActiveValue])
 
   return {
     isHighlighted,
@@ -500,7 +531,7 @@ export function ListboxItem({
   onMouseMove,
   id: idProp,
   ...props
-}: ListboxItemProps & { ref?: Ref<HTMLDivElement> }) {
+}: ItemProps & { ref?: Ref<HTMLDivElement> }) {
   const generatedId = useId()
   const id = getElementId(idProp, generatedId)
   const {
@@ -509,7 +540,7 @@ export function ListboxItem({
     isSelected,
     handleMouseMove,
     selectItem,
-  } = useListboxItemBehavior(optionValue, disabled)
+  } = useItemBehavior(optionValue, disabled)
 
   const itemData = useMemo(() => ({
     value: optionValue,
@@ -558,7 +589,7 @@ export function ListboxGroup({
   children,
   asChild = false,
   ...props
-}: ListboxGroupProps & { ref?: Ref<HTMLDivElement> }) {
+}: GroupProps & { ref?: Ref<HTMLDivElement> }) {
   const [groupLabelId, setGroupLabelId] = useState<string | null>(null)
   const groupProps = {
     ...props,
@@ -567,7 +598,7 @@ export function ListboxGroup({
   }
 
   return (
-    <ListboxGroupProvider groupLabelId={groupLabelId} setGroupLabelId={setGroupLabelId}>
+    <GroupProvider groupLabelId={groupLabelId} setGroupLabelId={setGroupLabelId}>
       {asChild
         ? (
             <Slot ref={ref} {...groupProps}>
@@ -579,7 +610,7 @@ export function ListboxGroup({
               {children}
             </Primitive.div>
           )}
-    </ListboxGroupProvider>
+    </GroupProvider>
   )
 }
 
@@ -594,8 +625,8 @@ export function ListboxGroupLabel({
   asChild = false,
   id: idProp,
   ...props
-}: ListboxGroupLabelProps & { ref?: Ref<HTMLDivElement> }) {
-  const { setGroupLabelId } = useListboxGroupContext('ListboxGroupLabel')
+}: GroupLabelProps & { ref?: Ref<HTMLDivElement> }) {
+  const { setGroupLabelId } = useGroupContext('GroupLabel')
   const generatedId = useId()
   const id = getElementId(idProp, generatedId)
 

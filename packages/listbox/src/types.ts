@@ -8,7 +8,7 @@ export type Orientation = 'vertical' | 'horizontal'
 /**
  * Shared root props for single- and multi-select listboxes.
  */
-interface ListboxRootBaseProps {
+interface RootBaseProps {
   /**
    * Disables interaction for the entire listbox.
    */
@@ -38,7 +38,7 @@ interface ListboxRootBaseProps {
 /**
  * Props for a single-select listbox.
  */
-export interface SingleListboxRootProps extends ListboxRootBaseProps {
+interface SingleRootProps extends RootBaseProps {
   /**
    * Enables single-selection mode.
    */
@@ -60,7 +60,7 @@ export interface SingleListboxRootProps extends ListboxRootBaseProps {
 /**
  * Props for a multi-select listbox.
  */
-export interface MultiListboxRootProps extends ListboxRootBaseProps {
+interface MultiRootProps extends RootBaseProps {
   /**
    * Enables multi-selection mode.
    */
@@ -82,19 +82,24 @@ export interface MultiListboxRootProps extends ListboxRootBaseProps {
 /**
  * Props accepted by the root listbox component.
  */
-export type ListboxRootProps = SingleListboxRootProps | MultiListboxRootProps
+export type RootProps = SingleRootProps | MultiRootProps
+
+/**
+ * Public props accepted by the root listbox component.
+ */
+export type ListboxRootProps = RootProps
 
 /**
  * Backward-compatible alias for `ListboxRootProps`.
  */
-export type ListboxProps = ListboxRootProps
+export type ListboxProps = RootProps
 
 type DivProps = Omit<ComponentPropsWithoutRef<'div'>, 'children'>
 
 /**
  * Props for the label element associated with a listbox.
  */
-export interface ListboxLabelProps extends DivProps {
+export interface LabelProps extends DivProps {
   /**
    * Label content.
    */
@@ -106,9 +111,14 @@ export interface ListboxLabelProps extends DivProps {
 }
 
 /**
+ * Public props accepted by `ListboxLabel`.
+ */
+export type ListboxLabelProps = LabelProps
+
+/**
  * Props for the element that renders the listbox options container.
  */
-export interface ListboxContentProps extends DivProps {
+export interface ContentProps extends DivProps {
   /**
    * Content inside the listbox.
    */
@@ -116,9 +126,14 @@ export interface ListboxContentProps extends DivProps {
 }
 
 /**
+ * Public props accepted by `ListboxContent`.
+ */
+export type ListboxContentProps = ContentProps
+
+/**
  * Props for an individual listbox option.
  */
-export interface ListboxItemProps extends DivProps {
+export interface ItemProps extends DivProps {
   /**
    * Option value used for selection.
    */
@@ -142,9 +157,14 @@ export interface ListboxItemProps extends DivProps {
 }
 
 /**
+ * Public props accepted by `ListboxItem`.
+ */
+export type ListboxItemProps = ItemProps
+
+/**
  * Props for a grouped section of listbox options.
  */
-export interface ListboxGroupProps extends DivProps {
+export interface GroupProps extends DivProps {
   /**
    * Group contents.
    */
@@ -156,9 +176,14 @@ export interface ListboxGroupProps extends DivProps {
 }
 
 /**
+ * Public props accepted by `ListboxGroup`.
+ */
+export type ListboxGroupProps = GroupProps
+
+/**
  * Props for a label inside a grouped listbox section.
  */
-export interface ListboxGroupLabelProps extends DivProps {
+export interface GroupLabelProps extends DivProps {
   /**
    * Group label content.
    */
@@ -168,3 +193,8 @@ export interface ListboxGroupLabelProps extends DivProps {
    */
   asChild?: boolean
 }
+
+/**
+ * Public props accepted by `ListboxGroupLabel`.
+ */
+export type ListboxGroupLabelProps = GroupLabelProps

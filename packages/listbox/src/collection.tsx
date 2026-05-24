@@ -1,13 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react'
-import type { ListboxOptionRecord } from './listbox-behavior'
+import type { OptionRecord } from './behavior'
 import { composeRefs } from '@radix-ui/react-compose-refs'
 import { createContext } from '@radix-ui/react-context'
 import { Primitive } from '@radix-ui/react-primitive'
 import { Slot } from '@radix-ui/react-slot'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-export interface CollectionItem extends ListboxOptionRecord {
+export interface CollectionItem extends OptionRecord {
   /**
    * DOM node that owns this option record.
    */
@@ -22,11 +22,11 @@ interface CollectionContextValue {
   /**
    * Registered option metadata keyed by its DOM element.
    */
-  itemMap: Map<HTMLElement, ListboxOptionRecord>
+  itemMap: Map<HTMLElement, OptionRecord>
   /**
    * Adds or updates an option record in the collection.
    */
-  registerItem: (node: HTMLElement, itemData: ListboxOptionRecord) => void
+  registerItem: (node: HTMLElement, itemData: OptionRecord) => void
   /**
    * Removes an option record from the collection.
    */
@@ -37,14 +37,14 @@ interface CollectionContextValue {
   version: number
 }
 
-const [CollectionProviderImpl, useCollectionContext] = createContext<CollectionContextValue>('ListboxCollection')
+const [CollectionProviderImpl, useCollectionContext] = createContext<CollectionContextValue>('Collection')
 
 function CollectionProvider({ children }: { children: ReactNode }) {
   const collectionRef = useRef<HTMLDivElement>(null)
-  const [itemMap] = useState(() => new Map<HTMLElement, ListboxOptionRecord>())
+  const [itemMap] = useState(() => new Map<HTMLElement, OptionRecord>())
   const [version, setVersion] = useState(0)
 
-  const registerItem = useCallback((node: HTMLElement, itemData: ListboxOptionRecord) => {
+  const registerItem = useCallback((node: HTMLElement, itemData: OptionRecord) => {
     const prevItemData = itemMap.get(node)
 
     if (
@@ -93,7 +93,7 @@ interface CollectionItemSlotProps extends Omit<ComponentPropsWithoutRef<'div'>, 
   /**
    * Option metadata registered for keyboard navigation and typeahead.
    */
-  itemData: ListboxOptionRecord
+  itemData: OptionRecord
   /**
    * Rendered option content.
    */
@@ -147,6 +147,31 @@ function CollectionItemSlot({ ref: forwardedRef, itemData, children, asChild = f
   )
 }
 
+function getSortedItems(collectionNode: HTMLDivElement | null, itemMap: Map<HTMLElement, OptionRecord>) {
+  if (!collectionNode)
+    return [] as CollectionItem[]
+
+  // DOM position is the source of truth because React children can be nested in groups.
+  return [...itemMap.keys()]
+    .filter(node => collectionNode.contains(node))
+    .sort((a, b) => {
+      if (a === b)
+        return 0
+
+      const position = a.compareDocumentPosition(b)
+      if (position & Node.DOCUMENT_POSITION_FOLLOWING)
+        return -1
+      if (position & Node.DOCUMENT_POSITION_PRECEDING)
+        return 1
+
+      return 0
+    })
+    .map(element => ({
+      element,
+      ...itemMap.get(element)!,
+    }))
+}
+
 CollectionProvider.displayName = 'CollectionProvider'
 CollectionSlot.displayName = 'CollectionSlot'
 CollectionItemSlot.displayName = 'CollectionItemSlot'
@@ -159,33 +184,13 @@ const Collection = {
 
 function useCollection() {
   const { collectionRef, itemMap, version } = useCollectionContext('useCollection')
-
-  return useCallback(() => {
+  const items = useMemo(() => {
+    // `itemMap` is mutated in place; `version` is the cache key for sorted reads.
     void version
-
-    const collectionNode = collectionRef.current
-    if (!collectionNode)
-      return [] as CollectionItem[]
-
-    return [...itemMap.keys()]
-      .filter(node => collectionNode.contains(node))
-      .sort((a, b) => {
-        if (a === b)
-          return 0
-
-        const position = a.compareDocumentPosition(b)
-        if (position & Node.DOCUMENT_POSITION_FOLLOWING)
-          return -1
-        if (position & Node.DOCUMENT_POSITION_PRECEDING)
-          return 1
-
-        return 0
-      })
-      .map(element => ({
-        element,
-        ...itemMap.get(element)!,
-      }))
+    return getSortedItems(collectionRef.current, itemMap)
   }, [collectionRef, itemMap, version])
+
+  return useCallback(() => items, [items])
 }
 
 export {
