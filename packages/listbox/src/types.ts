@@ -30,6 +30,12 @@ interface RootBaseProps {
    */
   orientation?: Orientation
   /**
+   * Whether single-select focus movement also updates selection.
+   *
+   * Defaults to true. Set to false when users should commit the active option with Space or Enter.
+   */
+  selectionFollowsFocus?: boolean
+  /**
    * Listbox contents.
    */
   children: ReactNode

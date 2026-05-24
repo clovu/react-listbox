@@ -115,7 +115,7 @@ function App() {
             </div>
           )}
         >
-          <ListboxRoot value={singleValue} onValueChange={setSingleValue} loop>
+          <ListboxRoot value={singleValue} onValueChange={setSingleValue} loop selectionFollowsFocus={false}>
             <ListboxLabel>Select one option</ListboxLabel>
             <ListboxContent>
               {singleOptions.map(option => (

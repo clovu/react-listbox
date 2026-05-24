@@ -76,6 +76,7 @@ export function ListboxRoot({
   required = false,
   defaultValue,
   orientation = 'vertical',
+  selectionFollowsFocus = true,
   children,
 }: RootProps) {
   const [labelId, setLabelId] = useState<string | null>(null)
@@ -102,6 +103,7 @@ export function ListboxRoot({
         disabled={disabled}
         readOnly={readOnly}
         loop={loop}
+        selectionFollowsFocus={selectionFollowsFocus}
         orientation={orientation}
         required={required}
       >
@@ -163,8 +165,10 @@ function useContentBehavior() {
     disabled,
     readOnly,
     loop,
+    selectionFollowsFocus,
     orientation,
     selectionAnchorRef,
+    required,
   } = useRootContext('Content')
   const getItems = useCollection()
   // Typeahead is transient input state; refs avoid re-rendering on every printable key.
@@ -194,9 +198,10 @@ function useContentBehavior() {
     setActiveValue(nextValue)
     scrollToValue(nextValue)
 
-    if (!multiple && !readOnly && value !== nextValue)
+    // APG permits this selection-follows-focus model; the prop lets consumers opt into manual commits.
+    if (!multiple && selectionFollowsFocus && !readOnly && value !== nextValue)
       onValueChange(nextValue)
-  }, [multiple, onValueChange, readOnly, scrollToValue, setActiveValue, value])
+  }, [multiple, onValueChange, readOnly, scrollToValue, selectionFollowsFocus, setActiveValue, value])
 
   const toggleValue = useCallback((optionValue: string) => {
     if (readOnly)
@@ -209,9 +214,14 @@ function useContentBehavior() {
       return
     }
 
-    onValueChange(optionValue)
+    // Manual single-select mode may clear the current value unless the listbox is required.
+    if (!required && !selectionFollowsFocus && value === optionValue)
+      onValueChange('')
+    else
+      onValueChange(optionValue)
+
     setSelectionAnchor(optionValue)
-  }, [multiple, onValueChange, readOnly, setSelectionAnchor, value])
+  }, [multiple, onValueChange, readOnly, required, selectionFollowsFocus, setSelectionAnchor, value])
 
   const selectRange = useCallback((toValue: string) => {
     if (!multiple || readOnly)
@@ -254,9 +264,9 @@ function useContentBehavior() {
       return
     }
 
-    if (!multiple && !readOnly && value !== nextValue)
+    if (!multiple && selectionFollowsFocus && !readOnly && value !== nextValue)
       onValueChange(nextValue)
-  }, [multiple, onValueChange, readOnly, scrollToValue, selectRange, setActiveValue, value])
+  }, [multiple, onValueChange, readOnly, scrollToValue, selectRange, selectionFollowsFocus, setActiveValue, value])
 
   const moveByDirection = useCallback((direction: NavigationDirection, extendSelection = false) => {
     const items = getItems()

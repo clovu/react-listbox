@@ -33,7 +33,7 @@ pnpm lint
 pnpm typecheck
 ```
 
-The listbox core is covered by APG-focused tests for roles and labels, `aria-activedescendant`, single-select selection-follow-focus, multi-select toggling and range selection, disabled option skipping, horizontal key aliases, typeahead, and public exports.
+The listbox core is covered by APG-focused tests for roles and labels, `aria-activedescendant`, single-select selection-follow-focus and manual commit modes, multi-select toggling and range selection, disabled option skipping, horizontal key aliases, typeahead, and public exports.
 
 ## Release
 

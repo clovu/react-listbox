@@ -113,6 +113,47 @@ describe('listbox primitives', () => {
     expect(onValueChange).toHaveBeenLastCalledWith('apple')
   })
 
+  it('supports manual single-select commits when selection does not follow focus', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+
+    render(
+      <ListboxRoot defaultValue="apple" selectionFollowsFocus={false} onValueChange={onValueChange}>
+        <ListboxLabel>Choose fruit</ListboxLabel>
+        <ListboxContent>
+          <ListboxItem value="apple">Apple</ListboxItem>
+          <ListboxItem value="banana">Banana</ListboxItem>
+        </ListboxContent>
+      </ListboxRoot>,
+    )
+
+    const listbox = screen.getByRole('listbox', { name: 'Choose fruit' })
+
+    await user.click(listbox)
+    await user.keyboard('{ArrowDown}')
+
+    expect(getActiveOption(listbox).textContent).toBe('Banana')
+    expect(getOption('Apple').getAttribute('aria-selected')).toBe('true')
+    expect(getOption('Banana').getAttribute('aria-selected')).toBe('false')
+    expect(onValueChange).not.toHaveBeenCalled()
+
+    await user.keyboard(' ')
+
+    expect(getOption('Apple').getAttribute('aria-selected')).toBe('false')
+    expect(getOption('Banana').getAttribute('aria-selected')).toBe('true')
+    expect(onValueChange).toHaveBeenLastCalledWith('banana')
+
+    await user.keyboard(' ')
+
+    expect(getOption('Banana').getAttribute('aria-selected')).toBe('false')
+    expect(onValueChange).toHaveBeenLastCalledWith('')
+
+    await user.keyboard('{Enter}')
+
+    expect(getOption('Banana').getAttribute('aria-selected')).toBe('true')
+    expect(onValueChange).toHaveBeenLastCalledWith('banana')
+  })
+
   it('selects the first enabled option when an empty single-select listbox receives focus', async () => {
     const user = userEvent.setup()
     const onValueChange = vi.fn()

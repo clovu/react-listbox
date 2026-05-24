@@ -54,6 +54,10 @@ interface RootContextValue {
    */
   loop: boolean
   /**
+   * Whether single-select focus movement also updates selection.
+   */
+  selectionFollowsFocus: boolean
+  /**
    * Direction used to interpret arrow-key navigation.
    */
   orientation: Orientation
@@ -93,6 +97,7 @@ function RootProvider({
   disabled,
   readOnly,
   loop,
+  selectionFollowsFocus,
   orientation,
   required,
   children,
@@ -116,6 +121,7 @@ function RootProvider({
     disabled,
     readOnly,
     loop,
+    selectionFollowsFocus,
     orientation,
     required,
     selectionAnchorRef,
@@ -132,6 +138,7 @@ function RootProvider({
     disabled,
     readOnly,
     loop,
+    selectionFollowsFocus,
     orientation,
     required,
     selectionAnchorRef,
