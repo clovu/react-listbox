@@ -2,6 +2,10 @@
 
 Accessible listbox primitives for React.
 
+## Playground
+
+<https://react-listbox-playground.vercel.app/>
+
 ## Packages
 
 | Package | Description |
@@ -36,6 +40,10 @@ pnpm run release
 ```
 
 The repository is set up for CI-based publishing (npm Trusted Publisher workflow).
+
+Release checklist:
+
+- Verify the playground: <https://react-listbox-playground.vercel.app/>
 
 ## License
 
