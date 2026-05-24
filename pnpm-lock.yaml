@@ -25,8 +25,8 @@ catalogs:
       specifier: ^10.0.1
       version: 10.0.1
     '@fontsource-variable/geist':
-      specifier: ^5.2.8
-      version: 5.2.8
+      specifier: ^5.2.9
+      version: 5.2.9
     '@radix-ui/react-compose-refs':
       specifier: ^1.1.2
       version: 1.1.2
@@ -245,7 +245,7 @@ importers:
     dependencies:
       '@fontsource-variable/geist':
         specifier: 'catalog:'
-        version: 5.2.8
+        version: 5.2.9
       '@listbox/react':
         specifier: workspace:^
         version: link:../packages/listbox
@@ -939,8 +939,8 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
-  '@fontsource-variable/geist@5.2.8':
-    resolution: {integrity: sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw==}
+  '@fontsource-variable/geist@5.2.9':
+    resolution: {integrity: sha512-TP+QSBG3wxKGPE33CbMy/L0Nu3qvJ6Fy81Yc4LnQ95xH+i+cfEp8fyU8/kfV14YwszxIFPhnoMTbjL71waVpyQ==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -5583,7 +5583,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
-  '@fontsource-variable/geist@5.2.8': {}
+  '@fontsource-variable/geist@5.2.9': {}
 
   '@hono/node-server@1.19.11(hono@4.12.8)':
     dependencies:
