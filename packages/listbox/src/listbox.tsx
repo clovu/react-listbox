@@ -205,6 +205,9 @@ function useCollection() {
   }, [collectionRef, itemMap, version])
 }
 
+/**
+ * Provides listbox state and selection behavior for descendant primitives.
+ */
 export function ListboxRoot({
   value: controlledValue,
   onValueChange,
@@ -254,8 +257,14 @@ export function ListboxRoot({
   )
 }
 
+/**
+ * Alias for `ListboxRoot`.
+ */
 export const Listbox = ListboxRoot
 
+/**
+ * Renders the accessible label associated with the listbox.
+ */
 export function ListboxLabel({ ref, children, asChild = false, ...props }: ListboxLabelProps & { ref?: Ref<HTMLDivElement> }) {
   const { setLabelId } = useListboxContext('ListboxLabel')
   const id = useId()
@@ -282,6 +291,9 @@ export function ListboxLabel({ ref, children, asChild = false, ...props }: Listb
 
 ListboxLabel.displayName = 'ListboxLabel'
 
+/**
+ * Renders the focusable listbox element and handles keyboard navigation.
+ */
 export function ListboxContent({ ref, children, ...props }: ListboxContentProps & { ref?: Ref<HTMLDivElement> }) {
   const {
     value,
@@ -480,8 +492,14 @@ export function ListboxContent({ ref, children, ...props }: ListboxContentProps 
 
 ListboxContent.displayName = 'ListboxContent'
 
+/**
+ * Alias for `ListboxContent`.
+ */
 export const ListboxList = ListboxContent
 
+/**
+ * Renders a selectable option inside the listbox.
+ */
 export function ListboxItem({ ref: forwardedRef, value: optionValue, disabled = false, children, asChild = false, ...props }: ListboxItemProps & { ref?: Ref<HTMLDivElement> }) {
   const {
     value,
@@ -576,8 +594,14 @@ export function ListboxItem({ ref: forwardedRef, value: optionValue, disabled = 
 
 ListboxItem.displayName = 'ListboxItem'
 
+/**
+ * Alias for `ListboxItem`.
+ */
 export const ListboxOption = ListboxItem
 
+/**
+ * Renders an accessible group for related listbox options.
+ */
 export function ListboxGroup({ ref, children, asChild = false, ...props }: ListboxGroupProps & { ref?: Ref<HTMLDivElement> }) {
   const [groupLabelId, setGroupLabelId] = useState<string | null>(null)
 
@@ -614,6 +638,9 @@ export function ListboxGroup({ ref, children, asChild = false, ...props }: Listb
 
 ListboxGroup.displayName = 'ListboxGroup'
 
+/**
+ * Renders the label associated with a `ListboxGroup`.
+ */
 export function ListboxGroupLabel({ ref, children, asChild = false, ...props }: ListboxGroupLabelProps & { ref?: Ref<HTMLDivElement> }) {
   const { setGroupLabelId } = useListboxGroupContext('ListboxGroupLabel')
   const id = useId()
