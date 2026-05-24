@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import type {
   ListboxContentProps,
   ListboxGroupLabelProps,
@@ -16,6 +17,8 @@ import {
 } from 'react-listbox-primitives'
 import { cn } from '@/lib/utils'
 
+type ContentViewProps = ListboxContentProps & { ref?: Ref<HTMLDivElement> }
+
 function Listbox({ children, ...props }: ListboxRootProps) {
   return <ListboxRoot {...props}>{children}</ListboxRoot>
 }
@@ -30,12 +33,13 @@ function ListboxLabel({ className, ...props }: ListboxLabelProps) {
   )
 }
 
-function ListboxContent({ className, ...props }: ListboxContentProps) {
+function ListboxContent({ ref, className, ...props }: ContentViewProps) {
   return (
     <ListboxPrimitiveContent
+      ref={ref}
       data-slot="listbox-content"
       className={cn(
-        'overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover p-2 text-popover-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'min-w-0 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-popover p-1.5 text-popover-foreground shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring data-[orientation=horizontal]:flex data-[orientation=horizontal]:gap-2 data-[orientation=horizontal]:overflow-x-auto data-[orientation=horizontal]:overflow-y-hidden data-disabled:opacity-60',
         className,
       )}
       {...props}
@@ -48,7 +52,7 @@ function ListboxItem({ className, ...props }: ListboxItemProps) {
     <ListboxPrimitiveItem
       data-slot="listbox-item"
       className={cn(
-        'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 h-9 text-sm outline-hidden select-none data-highlighted:bg-muted data-highlighted:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
+        'relative flex min-h-10 cursor-default items-center gap-2 rounded-md px-2.5 py-2 text-sm outline-hidden select-none transition-colors data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground data-highlighted:bg-muted data-highlighted:text-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
         className,
       )}
       {...props}

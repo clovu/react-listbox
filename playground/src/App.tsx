@@ -1,66 +1,43 @@
-import { useEffect, useState } from 'react'
+import type { ThemePreference } from './components/theme-controls'
+import type { ScenarioId } from './lib/playground-data'
+import { Settings2 } from 'lucide-react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { CodeBlock } from './components/code-block'
 import { DemoCard } from './components/demo-card'
+import { KeyboardMatrix } from './components/keyboard-matrix'
+import { LiveListbox } from './components/live-listbox'
+import { ScenarioRail } from './components/scenario-rail'
+import { SettingsPanel } from './components/settings-panel'
+import { StatGrid } from './components/stat-grid'
+import { StateInspector } from './components/state-inspector'
 import { ThemeControls } from './components/theme-controls'
-import {
-  ListboxContent,
-  ListboxGroup,
-  ListboxGroupLabel,
-  ListboxItem,
-  ListboxLabel,
-  ListboxRoot,
-} from './components/ui/listbox'
-
-type ThemePreference = 'light' | 'dark' | 'system'
-
-interface ListboxOption {
-  value: string
-  label: string
-  disabled?: boolean
-}
+import { createScenarioSnippet } from './lib/code-snippets'
+import { createLabState, labReducer } from './lib/lab-state'
+import { EMPTY_SNAPSHOT, readListboxSnapshot, snapshotReducer } from './lib/listbox-snapshot'
+import { getScenarioById } from './lib/playground-data'
+import { formatValue } from './lib/value-format'
 
 const THEME_STORAGE_KEY = 'playground-theme'
-
-const singleOptions: ListboxOption[] = [
-  { value: '1', label: 'Option 1' },
-  { value: '2', label: 'Option 2' },
-  { value: '3', label: 'Option 3 (Disabled)', disabled: true },
-  { value: '4', label: 'Option 4' },
-]
-
-const multiOptions: ListboxOption[] = [
-  { value: '1', label: 'Option 1' },
-  { value: '2', label: 'Option 2' },
-  { value: '3', label: 'Option 3' },
-  { value: '4', label: 'Option 4' },
-]
-
-const readOnlyItems: ListboxOption[] = [
-  { value: 'guide-1', label: 'Getting Started' },
-  { value: 'guide-2', label: 'Components Overview' },
-  { value: 'guide-3', label: 'Accessibility Notes' },
-  { value: 'guide-4', label: 'Keyboard Interaction' },
-  { value: 'guide-5', label: 'Composition Patterns' },
-  { value: 'guide-6', label: 'Styling Recipes' },
-  { value: 'guide-7', label: 'State Management' },
-  { value: 'guide-8', label: 'Testing Checklist' },
-  { value: 'guide-9', label: 'Migration Guide' },
-  { value: 'guide-10', label: 'FAQ' },
-  { value: 'guide-11', label: 'Performance Tips' },
-  { value: 'guide-12', label: 'Troubleshooting' },
-]
 
 function isThemePreference(value: string): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system'
 }
 
+function getCurrentValue(scenarioMode: 'single' | 'multiple', singleValue: string, multiValues: string[]) {
+  return scenarioMode === 'multiple' ? multiValues : singleValue
+}
+
 function App() {
-  const [singleValue, setSingleValue] = useState('2')
-  const [multiValues, setMultiValues] = useState<string[]>(['1', '3'])
-  const [groupedValue, setGroupedValue] = useState('apple')
+  const [labState, dispatchLab] = useReducer(labReducer, 'single', createLabState)
+  const [snapshot, updateSnapshot] = useReducer(snapshotReducer, EMPTY_SNAPSHOT)
   const [themePreference, setThemePreference] = useState<ThemePreference>(() => {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
     return stored && isThemePreference(stored) ? stored : 'system'
   })
+  const listboxRef = useRef<HTMLDivElement>(null)
+  const activeScenario = getScenarioById(labState.activeScenarioId)
+  const currentValue = getCurrentValue(activeScenario.mode, labState.singleValue, labState.multiValues)
+  const snippet = useMemo(() => createScenarioSnippet(activeScenario, labState.settings), [activeScenario, labState.settings])
 
   useEffect(() => {
     const root = document.documentElement
@@ -74,137 +51,131 @@ function App() {
     applyTheme()
     window.localStorage.setItem(THEME_STORAGE_KEY, themePreference)
 
-    if (themePreference !== 'system') {
+    if (themePreference !== 'system')
       return
-    }
 
-    const handleChange = () => {
-      applyTheme()
-    }
-
+    const handleChange = () => applyTheme()
     media.addEventListener('change', handleChange)
-    return () => {
-      media.removeEventListener('change', handleChange)
-    }
+    return () => media.removeEventListener('change', handleChange)
   }, [themePreference])
 
+  useEffect(() => {
+    const node = listboxRef.current
+
+    if (!node)
+      return
+
+    const refreshSnapshot = () => updateSnapshot(readListboxSnapshot(node))
+    const scheduleRefresh = () => window.requestAnimationFrame(refreshSnapshot)
+
+    refreshSnapshot()
+
+    const observer = new MutationObserver(refreshSnapshot)
+    observer.observe(node, {
+      attributeFilter: [
+        'aria-activedescendant',
+        'aria-disabled',
+        'aria-multiselectable',
+        'aria-orientation',
+        'aria-readonly',
+        'aria-required',
+        'aria-selected',
+        'data-highlighted',
+        'data-state',
+        'data-value',
+        'tabindex',
+      ],
+      attributes: true,
+      subtree: true,
+    })
+
+    node.addEventListener('click', scheduleRefresh)
+    node.addEventListener('keydown', scheduleRefresh)
+    node.addEventListener('mousemove', scheduleRefresh)
+
+    return () => {
+      observer.disconnect()
+      node.removeEventListener('click', scheduleRefresh)
+      node.removeEventListener('keydown', scheduleRefresh)
+      node.removeEventListener('mousemove', scheduleRefresh)
+    }
+  }, [labState.activeScenarioId, labState.settings, labState.singleValue, labState.multiValues])
+
+  function selectScenario(scenarioId: ScenarioId) {
+    dispatchLab({ type: 'selectScenario', scenarioId })
+    updateSnapshot(EMPTY_SNAPSHOT)
+  }
+
+  function resetScenario() {
+    dispatchLab({ type: 'resetScenario' })
+    updateSnapshot(EMPTY_SNAPSHOT)
+  }
+
   return (
-    <main className="min-h-screen bg-linear-to-b from-background to-muted/30 py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4">
-        <section className="flex flex-col gap-2">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-semibold tracking-tight">Listbox Primitives Playground</h1>
-              <p className="text-sm text-muted-foreground md:text-base">
-                Validate single select, multi select, grouped options, disabled options, and keyboard
-                interaction.
-              </p>
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-4 border-b pb-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs font-medium text-muted-foreground">
+              <Settings2 className="size-3.5" aria-hidden="true" />
+              Playground
             </div>
-
-            <ThemeControls themePreference={themePreference} onChange={setThemePreference} />
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              react-listbox-primitives
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              A focused lab for selection state, keyboard behavior, disabled boundaries, and ARIA output.
+            </p>
           </div>
-        </section>
 
-        <DemoCard
-          title="Single Select Listbox (Loop)"
-          footer={(
-            <div className="text-sm text-muted-foreground">
-              Current value:
-              {' '}
-              <span className="font-medium text-foreground">{singleValue}</span>
-            </div>
-          )}
-        >
-          <ListboxRoot value={singleValue} onValueChange={setSingleValue} loop selectionFollowsFocus={false}>
-            <ListboxLabel>Select one option</ListboxLabel>
-            <ListboxContent>
-              {singleOptions.map(option => (
-                <ListboxItem key={option.value} value={option.value} disabled={option.disabled}>
-                  {option.label}
-                </ListboxItem>
-              ))}
-            </ListboxContent>
-          </ListboxRoot>
-        </DemoCard>
+          <ThemeControls themePreference={themePreference} onChange={setThemePreference} />
+        </header>
 
-        <DemoCard
-          title="Multi Select Listbox"
-          footer={(
-            <div className="text-sm text-muted-foreground">
-              Current value:
-              {' '}
-              <span className="font-medium text-foreground">{multiValues.join(', ') || 'none'}</span>
-            </div>
-          )}
-        >
-          <ListboxRoot multiple value={multiValues} onValueChange={setMultiValues}>
-            <ListboxLabel>Select multiple options</ListboxLabel>
-            <ListboxContent>
-              {multiOptions.map(option => (
-                <ListboxItem key={option.value} value={option.value}>
-                  {option.label}
-                </ListboxItem>
-              ))}
-            </ListboxContent>
-          </ListboxRoot>
-        </DemoCard>
+        <div className="grid flex-1 gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_22rem]">
+          <aside className="flex flex-col gap-4">
+            <ScenarioRail activeScenarioId={labState.activeScenarioId} onChange={selectScenario} />
+          </aside>
 
-        <DemoCard
-          title="Grouped Listbox"
-          footer={(
-            <div className="text-sm text-muted-foreground">
-              Current value:
-              {' '}
-              <span className="font-medium text-foreground">{groupedValue}</span>
-            </div>
-          )}
-        >
-          <ListboxRoot value={groupedValue} onValueChange={setGroupedValue}>
-            <ListboxLabel>Select a fruit</ListboxLabel>
-            <ListboxContent>
-              <ListboxGroup className="mb-2 last:mb-0">
-                <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Citrus
-                </ListboxGroupLabel>
-                <ListboxItem value="orange">Orange</ListboxItem>
-                <ListboxItem value="lemon">Lemon</ListboxItem>
-              </ListboxGroup>
+          <section className="flex min-w-0 flex-col gap-4">
+            <DemoCard
+              title={activeScenario.title}
+              description={activeScenario.summary}
+              action={(
+                <span className="rounded-md border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground">
+                  {formatValue(currentValue)}
+                </span>
+              )}
+            >
+              <div className="flex flex-col gap-4">
+                <StatGrid scenario={activeScenario} settings={labState.settings} />
+                <LiveListbox
+                  listboxRef={listboxRef}
+                  scenario={activeScenario}
+                  settings={labState.settings}
+                  singleValue={labState.singleValue}
+                  multiValues={labState.multiValues}
+                  onSingleValueChange={value => dispatchLab({ type: 'setSingleValue', value })}
+                  onMultiValuesChange={values => dispatchLab({ type: 'setMultiValues', values })}
+                />
+              </div>
+            </DemoCard>
 
-              <ListboxGroup className="mb-2 last:mb-0">
-                <ListboxGroupLabel className="px-3 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                  Other
-                </ListboxGroupLabel>
-                <ListboxItem value="apple">Apple</ListboxItem>
-                <ListboxItem value="banana">Banana</ListboxItem>
-              </ListboxGroup>
-            </ListboxContent>
-          </ListboxRoot>
-        </DemoCard>
+            <DemoCard title="Composition" description="The current scenario as primitive code.">
+              <CodeBlock code={snippet} />
+            </DemoCard>
+          </section>
 
-        <DemoCard
-          title="Read-only Listbox"
-          footer={<div className="text-sm text-muted-foreground">Note: this list is read-only and cannot change selection.</div>}
-        >
-          <ListboxRoot readOnly loop>
-            <ListboxLabel>Read-only list</ListboxLabel>
-            <ListboxContent className="max-h-72">
-              {readOnlyItems.map(item => (
-                <ListboxItem key={item.value} value={item.value}>
-                  {item.label}
-                </ListboxItem>
-              ))}
-            </ListboxContent>
-          </ListboxRoot>
-        </DemoCard>
-
-        <DemoCard title="Keyboard Checklist">
-          <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-muted-foreground">
-            <li>Single select: Arrow / Home / End move focus and selection together.</li>
-            <li>Typeahead: printable keys search enabled options using visible text or `textValue`.</li>
-            <li>Multi select: Arrow moves focus, Space toggles, Shift + Arrow extends range, Ctrl/Cmd + A toggles enabled options.</li>
-            <li>Disabled options are skipped during keyboard navigation and bulk selection.</li>
-          </ul>
-        </DemoCard>
+          <aside className="flex flex-col gap-4">
+            <SettingsPanel
+              scenario={activeScenario}
+              settings={labState.settings}
+              onReset={resetScenario}
+              onSettingsChange={settings => dispatchLab({ type: 'updateSettings', settings })}
+            />
+            <StateInspector currentValue={currentValue} snapshot={snapshot} />
+            <KeyboardMatrix scenario={activeScenario} />
+          </aside>
+        </div>
       </div>
     </main>
   )
