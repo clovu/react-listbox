@@ -1,8 +1,6 @@
+import { join } from 'node:path'
 import { defineConfig } from 'bumpp'
 
 export default defineConfig({
-  files: [
-    'package.json',
-    'packages/listbox/package.json',
-  ],
+  cwd: join(__dirname, 'packages/listbox'),
 })
