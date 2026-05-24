@@ -2,7 +2,6 @@
   "name": "react-listbox-root",
   "type": "module",
   "version": "0.0.1",
-  "packageManager": "pnpm@10.25.0",
   "author": "Clover You <hi@clovu.me>",
   "license": "MIT",
   "funding": "https://github.com/sponsors/clovu",
