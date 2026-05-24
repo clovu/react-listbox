@@ -30,7 +30,7 @@ catalog:
   '@types/react': ^19.2.14
   '@types/react-dom': ^19.2.3
   '@vitejs/plugin-react': ^6.0.1
-  bumpp: ^11.0.0
+  bumpp: ^11.1.0
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
   cmdk: ^1.1.1
@@ -60,3 +60,6 @@ catalog:
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks
+allowBuilds:
+  msw: set this to true or false
+  simple-git-hooks: set this to true or false
