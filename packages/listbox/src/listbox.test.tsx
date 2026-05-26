@@ -335,4 +335,18 @@ describe('listbox primitives', () => {
 
     expect(screen.getByRole('listbox', { name: 'External team label' })).toBeTruthy()
   })
+
+  it('clears highlighted option when mouse leaves an option', async () => {
+    const user = userEvent.setup()
+    const { listbox } = renderSingleListbox()
+
+    await user.hover(getOption('Banana'))
+
+    expect(getOption('Banana').getAttribute('data-highlighted')).toBe('')
+    expect(getActiveOption(listbox).textContent).toBe('Banana')
+
+    await user.unhover(getOption('Banana'))
+
+    expect(getOption('Banana').hasAttribute('data-highlighted')).toBeFalsy()
+  })
 })

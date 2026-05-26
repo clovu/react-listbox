@@ -518,12 +518,18 @@ function useItemBehavior(optionValue: string, disabled: boolean) {
       setActiveValue(optionValue)
   }, [isItemDisabled, optionValue, setActiveValue])
 
+  const handleMouseLeave = useCallback(() => {
+    if (!isItemDisabled && activeValue === optionValue)
+      setActiveValue(null)
+  }, [isItemDisabled, setActiveValue, optionValue, activeValue])
+
   return {
     isHighlighted,
     isItemDisabled,
     isSelected,
     handleMouseMove,
     selectItem,
+    handleMouseLeave,
   }
 }
 
@@ -539,6 +545,7 @@ export function ListboxItem({
   asChild = false,
   onClick,
   onMouseMove,
+  onMouseLeave,
   id: idProp,
   ...props
 }: ItemProps & { ref?: Ref<HTMLDivElement> }) {
@@ -550,6 +557,7 @@ export function ListboxItem({
     isSelected,
     handleMouseMove,
     selectItem,
+    handleMouseLeave,
   } = useItemBehavior(optionValue, disabled)
 
   const itemData = useMemo(() => ({
@@ -572,6 +580,7 @@ export function ListboxItem({
     'aria-disabled': isItemDisabled || undefined,
     'onMouseMove': composeEventHandlers(onMouseMove, handleMouseMove),
     'onClick': composeEventHandlers(onClick, handleClick),
+    'onMouseLeave': composeEventHandlers(onMouseLeave, handleMouseLeave),
     'data-state': isSelected ? 'checked' : 'unchecked',
     'data-highlighted': isHighlighted ? '' : undefined,
     'data-disabled': isItemDisabled ? '' : undefined,
