@@ -55,7 +55,7 @@ catalogs:
       specifier: ^25.9.1
       version: 25.9.3
     '@types/react':
-      specifier: ^19.2.14
+      specifier: ^19.2.17
       version: 19.2.17
     '@types/react-dom':
       specifier: ^19.2.3
@@ -103,10 +103,10 @@ catalogs:
       specifier: ^1.4.3
       version: 1.5.0
     react:
-      specifier: ^19.2.4
+      specifier: ^19.2.7
       version: 19.2.7
     react-dom:
-      specifier: ^19.2.4
+      specifier: ^19.2.7
       version: 19.2.7
     shadcn:
       specifier: ^4.11.0
@@ -136,7 +136,7 @@ catalogs:
       specifier: ^6.0.3
       version: 6.0.3
     vite:
-      specifier: ^8.0.14
+      specifier: ^8.0.16
       version: 8.0.16
     vitest:
       specifier: ^4.1.9
