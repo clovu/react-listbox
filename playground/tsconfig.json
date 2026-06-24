@@ -1,13 +1,19 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/playground.tsbuildinfo",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+      "react-listbox-primitives": ["../packages/listbox/node_modules/.tmp/types/index.d.ts"]
+    },
+    "types": ["vite/client", "node"],
+    "emitDeclarationOnly": true,
+    "outDir": "./node_modules/.tmp/types"
   },
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "../packages/listbox" }
   ],
-  "files": []
+  "include": ["src", "vite.config.ts"]
 }
