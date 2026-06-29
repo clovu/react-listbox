@@ -22,7 +22,7 @@ packages:
   - packages/*
   - docs
 catalog:
-  '@antfu/eslint-config': ^9.0.0
+  '@antfu/eslint-config': ^9.1.0
   '@antfu/ni': ^30.1.0
   '@cspell/dict-lorem-ipsum': ^4.0.5
   '@cspell/eslint-plugin': ^10.0.1
